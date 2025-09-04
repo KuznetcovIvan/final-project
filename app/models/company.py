@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import Enum, ForeignKey, String, UniqueConstraint
@@ -32,7 +33,21 @@ class UserCompanyMembership(Base):
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
     department_id: Mapped[int | None] = mapped_column(ForeignKey('department.id', ondelete='SET NULL'))
     manager_id: Mapped[int | None] = mapped_column(ForeignKey('user.id', ondelete='SET NULL'))
-    role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name='user_role'),
-        default=UserRole.USER,
-    )
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
+
+
+class CompanyNews(Base):
+    __table_args__ = (UniqueConstraint('title', 'published_at', name='unique_title_published'),)
+    title: Mapped[str] = mapped_column(String(255))
+    body: Mapped[str] = mapped_column(String(4000))
+    author_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
+    company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
+    published_at: Mapped[datetime] = mapped_column(default=datetime.now)
+
+
+class Invite(Base):
+    code: Mapped[str] = mapped_column(String(6), unique=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
+    department_id: Mapped[int | None] = mapped_column(ForeignKey('department.id', ondelete='SET NULL'))
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
+    created_by: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))

@@ -1,16 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.endpoints.user import router as user_router
+from app.api.endpoints.company import router as company_router
 
-main_router = APIRouter()
-# main_router.include_router(
-#     charityproject_router,
-#     prefix='/charity_project',
-#     tags=['charity_projects']
-# )
-# main_router.include_router(
-#     donation_router,
-#     prefix='/donation',
-#     tags=['donations']
-# )
-main_router.include_router(user_router)
+main_router_v1 = APIRouter(prefix='/v1')
+main_router_v1.include_router(company_router, tags=['Компании'])

@@ -1,19 +1,16 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.constants import COMPANY_NAME_MAX_LENGTH, DEPARTMENT_NAME_MAX_LENGTH
+from app.models.company import UserRole
 
 FIELD_CANT_BE_EMPTY = 'Поле не может быть пустым!'
 
 
-class CompanyBase(BaseModel):
+class CompanyCreate(BaseModel):
     name: str = Field(..., max_length=COMPANY_NAME_MAX_LENGTH)
 
 
-class CompanyCreate(CompanyBase):
-    pass
-
-
-class CompanyRead(CompanyBase):
+class CompanyRead(CompanyCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -27,20 +24,14 @@ class CompanyUpdate(BaseModel):
         return value
 
 
-class DepartmentBase(BaseModel):
+class DepartmentCreate(BaseModel):
     name: str = Field(..., max_length=DEPARTMENT_NAME_MAX_LENGTH)
-
-
-class DepartmentCreate(DepartmentBase):
     company_name: str = Field(..., max_length=COMPANY_NAME_MAX_LENGTH)
     parent_department_name: str | None = Field(None, max_length=DEPARTMENT_NAME_MAX_LENGTH)
 
 
-class DepartmentRead(DepartmentBase):
+class DepartmentRead(DepartmentCreate):
     model_config = ConfigDict(from_attributes=True)
-
-    company_name: str
-    parent_department: str | None = None
 
 
 class DepartmentUpdate(BaseModel):
@@ -51,3 +42,18 @@ class DepartmentUpdate(BaseModel):
         if value is None:
             raise ValueError(FIELD_CANT_BE_EMPTY)
         return value
+
+
+class CompanyMembershipBase(BaseModel):
+    company_id: int
+    department_id: int | None = None
+    manager_id: int | None = None
+    role: UserRole
+
+
+class CompanyMembershipCreate(CompanyMembershipBase):
+    user_id: int
+
+
+class CompanyMembershipRead(CompanyMembershipBase):
+    model_config = ConfigDict(from_attributes=True)
