@@ -1,4 +1,3 @@
-from datetime import datetime as dt
 from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
@@ -41,9 +40,6 @@ class CRUDBase:
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
-        if db_obj.invested_amount == db_obj.full_amount:
-            db_obj.fully_invested = True
-            db_obj.close_date = dt.now()
         session.add(db_obj)
         await session.commit()
         await session.refresh(db_obj)
@@ -53,9 +49,3 @@ class CRUDBase:
         await session.delete(db_obj)
         await session.commit()
         return db_obj
-
-    async def get_not_fully_invested(self, session: AsyncSession):
-        db_objs = await session.execute(
-            select(self.model).where(self.model.fully_invested.is_(False)).order_by(self.model.create_date)
-        )
-        return db_objs.scalars().all()
