@@ -1,6 +1,13 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.core.constants import COMPANY_NAME_MAX_LENGTH, DEPARTMENT_NAME_MAX_LENGTH
+from app.core.constants import (
+    COMPANY_NAME_MAX_LENGTH,
+    DEPARTMENT_NAME_MAX_LENGTH,
+    NEWS_BODY_MAX_LENGTH,
+    NEWS_TITLE_MAX_LENGTH,
+)
 from app.models.company import UserRole
 
 FIELD_CANT_BE_EMPTY = 'Поле не может быть пустым!'
@@ -11,9 +18,9 @@ class CompanyCreate(BaseModel):
 
 
 class CompanyRead(CompanyCreate):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CompanyUpdate(BaseModel):
@@ -58,4 +65,17 @@ class CompanyMembershipCreate(CompanyMembershipBase):
 
 
 class CompanyMembershipRead(CompanyMembershipBase):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CompanyNewsCreate(BaseModel):
+    title: str = Field(..., max_length=NEWS_TITLE_MAX_LENGTH)
+    body: str = Field(..., max_length=NEWS_BODY_MAX_LENGTH)
+    published_at: datetime = Field(default_factory=datetime.now)
+
+
+class CompanyNewsRead(CompanyNewsCreate):
+    id: str
+    company_id: int
+    author_id: int
     model_config = ConfigDict(from_attributes=True)

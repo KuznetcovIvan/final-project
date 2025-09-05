@@ -4,7 +4,12 @@ from enum import StrEnum
 from sqlalchemy import Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.constants import COMPANY_NAME_MAX_LENGTH, DEPARTMENT_NAME_MAX_LENGTH
+from app.core.constants import (
+    COMPANY_NAME_MAX_LENGTH,
+    DEPARTMENT_NAME_MAX_LENGTH,
+    NEWS_BODY_MAX_LENGTH,
+    NEWS_TITLE_MAX_LENGTH,
+)
 from app.core.db import Base
 
 
@@ -41,13 +46,11 @@ class UserCompanyMembership(Base):
 
 
 class CompanyNews(Base):
-    title: Mapped[str] = mapped_column(String(255))
-    body: Mapped[str] = mapped_column(String(4000))
+    title: Mapped[str] = mapped_column(String(NEWS_TITLE_MAX_LENGTH))
+    body: Mapped[str] = mapped_column(String(NEWS_BODY_MAX_LENGTH))
     author_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
-    published_at: Mapped[datetime] = mapped_column(default=datetime.now)
-
-    __table_args__ = (UniqueConstraint('title', 'published_at', name='unique_title_published'),)
+    published_at: Mapped[datetime]
 
 
 class Invite(Base):
