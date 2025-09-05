@@ -35,16 +35,19 @@ class CompanyUpdate(BaseModel):
 
 class DepartmentCreate(BaseModel):
     name: str = Field(..., max_length=DEPARTMENT_NAME_MAX_LENGTH)
-    company_name: str = Field(..., max_length=COMPANY_NAME_MAX_LENGTH)
-    parent_department_name: str | None = Field(None, max_length=DEPARTMENT_NAME_MAX_LENGTH)
+    parent_id: int | None = None
 
 
 class DepartmentRead(DepartmentCreate):
+    id: int
+    company_id: int
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class DepartmentUpdate(BaseModel):
     name: str | None = Field(None, max_length=DEPARTMENT_NAME_MAX_LENGTH)
+    parent_id: int | None = None
 
     @field_validator('name')
     def check_not_none(cls, value):

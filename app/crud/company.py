@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from app.crud.base import CRUDBase
 from app.models.company import Company, CompanyNews, Department, UserCompanyMembership
 from app.models.user import User
-from app.schemas.company import CompanyNewsCreate
+from app.schemas.company import CompanyNewsCreate, DepartmentCreate
 
 
 class CRUDCompany(CRUDBase):
@@ -24,7 +24,19 @@ class CRUDCompany(CRUDBase):
 
 
 class CRUDDepartment(CRUDBase):
-    pass
+    async def create(self, obj_in: DepartmentCreate, company_id: int, session: AsyncSession):
+        data = obj_in.model_dump()
+        data['company_id'] = company_id
+        db_obj = self.model(**data)
+        session.add(db_obj)
+        await session.commit()
+        await session.refresh(db_obj)
+        return db_obj
+
+
+async def get_multi_by_company(self, company_id: int, session: AsyncSession):
+    result = await session.execute(select(self.model).where(self.model.company_id == company_id))
+    return result.scalars().all()
 
 
 class CRUDMembership(CRUDBase):

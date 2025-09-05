@@ -9,7 +9,7 @@ from app.api.validators import (
 )
 from app.core.db import get_async_session
 from app.core.user import current_user
-from app.crud.company import company_crud, membership_crud, news_crud
+from app.crud.company import company_crud, department_crud, membership_crud, news_crud
 from app.models.company import UserRole
 from app.models.user import User
 from app.schemas.company import (
@@ -21,6 +21,8 @@ from app.schemas.company import (
     CompanyNewsUpdate,
     CompanyRead,
     CompanyUpdate,
+    DepartmentCreate,
+    DepartmentRead,
 )
 
 router = APIRouter(prefix='/companies')
@@ -115,3 +117,18 @@ async def update_news(
 async def remove_news(news_id: int, company_id: int, session: AsyncSession = Depends(get_async_session)):
     news = await check_news_in_company_exists(news_id, company_id, session)
     return await news_crud.remove(news, session)
+
+
+@router.post(
+    '/{company_id}/departments',
+    response_model=DepartmentRead,
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_admin_or_superuser)],
+)
+async def create_department(
+    company_id: int,
+    obj_in: DepartmentCreate,
+    session: AsyncSession = Depends(get_async_session),
+):
+    await check_company_exists(company_id, session)
+    return await department_crud.create(obj_in, company_id, session)
