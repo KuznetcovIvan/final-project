@@ -40,7 +40,11 @@ async def get_multi_by_company(self, company_id: int, session: AsyncSession):
 
 
 class CRUDMembership(CRUDBase):
-    pass
+    async def get_by_user_and_company(self, user_id: int, company_id: int, session: AsyncSession):
+        result = await session.execute(
+            select(self.model).where(self.model.user_id == user_id, self.model.company_id == company_id)
+        )
+        return result.scalars().first()
 
 
 class CRUDNews(CRUDBase):

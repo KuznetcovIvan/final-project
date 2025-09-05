@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import user_admin_or_superuser
+from app.api.dependencies import user_admin_or_superuser, user_member_or_superuser
 from app.api.validators import (
     check_company_exists,
     check_company_name_duplicate,
@@ -74,7 +74,7 @@ async def remove_company(company_id: int, session: AsyncSession = Depends(get_as
     '/{company_id}/news',
     response_model=list[CompanyNewsRead],
     response_model_exclude_none=True,
-    dependencies=[Depends(user_admin_or_superuser)],
+    dependencies=[Depends(user_member_or_superuser)],
 )
 async def get_all_news(
     company_id: int,
@@ -117,6 +117,17 @@ async def update_news(
 async def remove_news(news_id: int, company_id: int, session: AsyncSession = Depends(get_async_session)):
     news = await check_news_in_company_exists(news_id, company_id, session)
     return await news_crud.remove(news, session)
+
+
+@router.get(
+    '/{company_id}/departments',
+    response_model=list[DepartmentRead],
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_member_or_superuser)],
+)
+async def get_all_departments(company_id: int, session: AsyncSession = Depends(get_async_session)):
+    await check_company_exists(company_id, session)
+    return await department_crud.get_multi_by_company(company_id, session)
 
 
 @router.post(

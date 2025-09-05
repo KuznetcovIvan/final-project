@@ -11,6 +11,7 @@ from app.core.constants import (
 from app.models.company import UserRole
 
 FIELD_CANT_BE_EMPTY = 'Поле не может быть пустым!'
+DATE_CANT_BE_IN_PAST = 'Нельзя опубликовать новость в прошлом'
 
 
 class CompanyCreate(BaseModel):
@@ -78,7 +79,7 @@ class CompanyNewsCreate(BaseModel):
 
 
 class CompanyNewsRead(CompanyNewsCreate):
-    id: str
+    id: int
     company_id: int
     author_id: int
     model_config = ConfigDict(from_attributes=True)
@@ -93,4 +94,10 @@ class CompanyNewsUpdate(BaseModel):
     def check_not_none(cls, value):
         if value is None:
             raise ValueError(FIELD_CANT_BE_EMPTY)
+        return value
+
+    @field_validator('published_at')
+    def check_publish_datetime(cls, value):
+        if value < datetime.now():
+            raise ValueError(DATE_CANT_BE_IN_PAST)
         return value
