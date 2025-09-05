@@ -3,7 +3,9 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.constants import (
+    COMPANY_FIELD_NAME,
     COMPANY_NAME_MAX_LENGTH,
+    DEPARTMENT_FIELD_NAME,
     DEPARTMENT_NAME_MAX_LENGTH,
     NEWS_BODY_MAX_LENGTH,
     NEWS_TITLE_MAX_LENGTH,
@@ -27,7 +29,7 @@ class CompanyRead(CompanyCreate):
 class CompanyUpdate(BaseModel):
     name: str | None = Field(None, max_length=COMPANY_NAME_MAX_LENGTH)
 
-    @field_validator('name')
+    @field_validator(COMPANY_FIELD_NAME)
     def check_not_none(cls, value):
         if value is None:
             raise ValueError(FIELD_CANT_BE_EMPTY)
@@ -50,7 +52,7 @@ class DepartmentUpdate(BaseModel):
     name: str | None = Field(None, max_length=DEPARTMENT_NAME_MAX_LENGTH)
     parent_id: int | None = None
 
-    @field_validator('name')
+    @field_validator(DEPARTMENT_FIELD_NAME)
     def check_not_none(cls, value):
         if value is None:
             raise ValueError(FIELD_CANT_BE_EMPTY)

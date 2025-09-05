@@ -3,8 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import user_admin_or_superuser, user_member_or_superuser
 from app.api.validators import (
+    check_company_before_edit,
     check_company_exists,
     check_company_name_duplicate,
+    check_department_before_edit,
+    check_department_in_company_exists,
+    check_department_name_duplicate_in_company,
     check_news_in_company_exists,
 )
 from app.core.db import get_async_session
@@ -23,6 +27,7 @@ from app.schemas.company import (
     CompanyUpdate,
     DepartmentCreate,
     DepartmentRead,
+    DepartmentUpdate,
 )
 
 router = APIRouter(prefix='/companies')
@@ -57,7 +62,7 @@ async def get_all_companies(session: AsyncSession = Depends(get_async_session), 
     dependencies=[Depends(user_admin_or_superuser)],
 )
 async def update_company(company_id: int, obj_in: CompanyUpdate, session: AsyncSession = Depends(get_async_session)):
-    return await company_crud.update(await check_company_exists(company_id, session), obj_in, session)
+    return await company_crud.update(await check_company_before_edit(company_id, obj_in, session), obj_in, session)
 
 
 @router.delete(
@@ -137,9 +142,35 @@ async def get_all_departments(company_id: int, session: AsyncSession = Depends(g
     dependencies=[Depends(user_admin_or_superuser)],
 )
 async def create_department(
-    company_id: int,
-    obj_in: DepartmentCreate,
-    session: AsyncSession = Depends(get_async_session),
+    company_id: int, obj_in: DepartmentCreate, session: AsyncSession = Depends(get_async_session)
 ):
     await check_company_exists(company_id, session)
+    await check_department_name_duplicate_in_company(company_id, obj_in, session)
     return await department_crud.create(obj_in, company_id, session)
+
+
+@router.patch(
+    '/{company_id}/departments/{department_id}',
+    response_model=DepartmentRead,
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_admin_or_superuser)],
+)
+async def update_department(
+    company_id: int,
+    department_id: int,
+    obj_in: DepartmentUpdate,
+    session: AsyncSession = Depends(get_async_session),
+):
+    department = await check_department_before_edit(company_id, department_id, obj_in, session)
+    return await department_crud.update(department, obj_in, session)
+
+
+@router.delete(
+    '/{company_id}/departments/{department_id}',
+    response_model=DepartmentRead,
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_admin_or_superuser)],
+)
+async def delete_department(company_id: int, department_id: int, session: AsyncSession = Depends(get_async_session)):
+    department = await check_department_in_company_exists(department_id, company_id, session)
+    return await department_crud.remove(department, session)
