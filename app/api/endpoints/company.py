@@ -36,6 +36,11 @@ async def create_new_company(
     return new_membership
 
 
+@router.get('/companies', response_model=list[CompanyRead], response_model_exclude_none=True)
+async def get_companies(session: AsyncSession = Depends(get_async_session), user: User = Depends(current_user)):
+    return await company_crud.get_multi_by_user(user, session)
+
+
 @router.patch(
     '/companies/{company_id}',
     response_model=CompanyRead,

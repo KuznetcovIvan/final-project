@@ -13,6 +13,8 @@ class CompanyCreate(BaseModel):
 class CompanyRead(CompanyCreate):
     model_config = ConfigDict(from_attributes=True)
 
+    id: int
+
 
 class CompanyUpdate(BaseModel):
     name: str | None = Field(None, max_length=COMPANY_NAME_MAX_LENGTH)
