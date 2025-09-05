@@ -42,6 +42,10 @@ class CRUDNews(CRUDBase):
         await session.refresh(db_obj)
         return db_obj
 
+    async def get_multi_by_company(self, company_id: int, session: AsyncSession):
+        result = await session.execute(select(self.model).where(self.model.company_id == company_id))
+        return result.scalars().all()
+
 
 company_crud = CRUDCompany(Company)
 department_crud = CRUDDepartment(Department)

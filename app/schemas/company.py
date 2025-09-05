@@ -79,3 +79,15 @@ class CompanyNewsRead(CompanyNewsCreate):
     company_id: int
     author_id: int
     model_config = ConfigDict(from_attributes=True)
+
+
+class CompanyNewsUpdate(BaseModel):
+    title: str | None = Field(None, max_length=NEWS_TITLE_MAX_LENGTH)
+    body: str | None = Field(None, max_length=NEWS_BODY_MAX_LENGTH)
+    published_at: datetime | None = None
+
+    @field_validator('title', 'body', 'published_at')
+    def check_not_none(cls, value):
+        if value is None:
+            raise ValueError(FIELD_CANT_BE_EMPTY)
+        return value
