@@ -1,14 +1,13 @@
-from fastapi import APIRouter, Depends
+from http import HTTPStatus  # noqa: I001
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import user_admin_or_superuser, user_member_or_superuser
 from app.api.validators import (
-    check_company_before_edit,
     check_company_exists,
-    check_company_name_duplicate,
-    check_department_before_edit,
     check_department_in_company_exists,
-    check_department_name_duplicate_in_company,
     check_news_in_company_exists,
 )
 from app.core.db import get_async_session
@@ -31,23 +30,28 @@ from app.schemas.company import (
 )
 
 router = APIRouter(prefix='/companies')
+COMPANY_NAME_EXISTS = 'Компания с именем "{}" уже существует.'
+DEPARTMENT_NAME_EXISTS = 'В компании id={} уже существует отдел "{}".'
 
 
 @router.post('/', response_model=CompanyMembershipRead, response_model_exclude_none=True)
 async def create_new_company(
-    company: CompanyCreate, session: AsyncSession = Depends(get_async_session), user: User = Depends(current_user)
+    obj_in: CompanyCreate, session: AsyncSession = Depends(get_async_session), user: User = Depends(current_user)
 ):
-    await check_company_name_duplicate(company.name, session)
-    new_company = await company_crud.create(company, session, commit=False)
-    await session.flush()
-    new_membership = await membership_crud.create(
-        CompanyMembershipCreate(user_id=user.id, company_id=new_company.id, role=UserRole.ADMIN),
+    try:
+        company = await company_crud.create(obj_in, session, commit=False)
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=COMPANY_NAME_EXISTS.format(obj_in.name))
+    membership = await membership_crud.create(
+        CompanyMembershipCreate(user_id=user.id, company_id=company.id, role=UserRole.ADMIN),
         session=session,
         commit=False,
     )
     await session.commit()
-    await session.refresh(new_membership)
-    return new_membership
+    await session.refresh(membership)
+    return membership
 
 
 @router.get('/', response_model=list[CompanyRead], response_model_exclude_none=True)
@@ -62,7 +66,12 @@ async def get_all_companies(session: AsyncSession = Depends(get_async_session), 
     dependencies=[Depends(user_admin_or_superuser)],
 )
 async def update_company(company_id: int, obj_in: CompanyUpdate, session: AsyncSession = Depends(get_async_session)):
-    return await company_crud.update(await check_company_before_edit(company_id, obj_in, session), obj_in, session)
+    try:
+        company = await company_crud.update(await check_company_exists(company_id, session), obj_in, session)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=COMPANY_NAME_EXISTS.format(obj_in.name))
+    return company
 
 
 @router.delete(
@@ -81,10 +90,7 @@ async def remove_company(company_id: int, session: AsyncSession = Depends(get_as
     response_model_exclude_none=True,
     dependencies=[Depends(user_member_or_superuser)],
 )
-async def get_all_news(
-    company_id: int,
-    session: AsyncSession = Depends(get_async_session),
-):
+async def get_all_news(company_id: int, session: AsyncSession = Depends(get_async_session)):
     await check_company_exists(company_id, session)
     return await news_crud.get_multi_by_company(company_id, session)
 
@@ -145,8 +151,14 @@ async def create_department(
     company_id: int, obj_in: DepartmentCreate, session: AsyncSession = Depends(get_async_session)
 ):
     await check_company_exists(company_id, session)
-    await check_department_name_duplicate_in_company(company_id, obj_in, session)
-    return await department_crud.create(obj_in, company_id, session)
+    try:
+        department = await department_crud.create(obj_in, company_id, session)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=DEPARTMENT_NAME_EXISTS.format(company_id, obj_in.name)
+        )
+    return department
 
 
 @router.patch(
@@ -161,8 +173,16 @@ async def update_department(
     obj_in: DepartmentUpdate,
     session: AsyncSession = Depends(get_async_session),
 ):
-    department = await check_department_before_edit(company_id, department_id, obj_in, session)
-    return await department_crud.update(department, obj_in, session)
+    try:
+        department = await department_crud.update(
+            await check_department_in_company_exists(department_id, company_id, session), obj_in, session
+        )
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=DEPARTMENT_NAME_EXISTS.format(company_id, obj_in.name)
+        )
+    return department
 
 
 @router.delete(

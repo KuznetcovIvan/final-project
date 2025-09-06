@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import (
     COMPANY_NAME_MAX_LENGTH,
-    DEPARTMENT_FIELD_NAME,
     DEPARTMENT_NAME_MAX_LENGTH,
     NEWS_BODY_MAX_LENGTH,
     NEWS_TITLE_MAX_LENGTH,
@@ -31,7 +30,7 @@ class Department(Base):
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
     parent_id: Mapped[int | None] = mapped_column(ForeignKey('department.id', ondelete='SET NULL'))
 
-    __table_args__ = (UniqueConstraint(DEPARTMENT_FIELD_NAME, 'company_id', name='unique_department_company'),)
+    __table_args__ = (UniqueConstraint('name', 'company_id', name='unique_department_company'),)
 
 
 class UserCompanyMembership(Base):

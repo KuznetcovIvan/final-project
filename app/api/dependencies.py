@@ -9,8 +9,8 @@ from app.crud.company import membership_crud
 from app.models.company import UserRole
 from app.models.user import User
 
-NOT_COMPANY_ADMIN = 'Вы должны быть админом этой компании или суперпользователем'
-NOT_COMPANY_MEMBER = 'Нет доступа к компании'
+NOT_COMPANY_ADMIN = 'Требуются права администратора компании или суперпользователя!'
+NOT_COMPANY_MEMBER = 'Вы не являетесь работником этой компании!'
 
 
 async def user_admin_or_superuser(

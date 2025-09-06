@@ -1,4 +1,4 @@
-from sqlalchemy import exists, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -33,15 +33,9 @@ class CRUDDepartment(CRUDBase):
         await session.refresh(db_obj)
         return db_obj
 
-    async def exists_name_in_company(self, company_id: int, name: str, session: AsyncSession) -> bool:
-        return await session.scalar(
-            select(exists().where(Department.company_id == company_id, Department.name == name))
-        )
-
-
-async def get_multi_by_company(self, company_id: int, session: AsyncSession):
-    result = await session.execute(select(self.model).where(self.model.company_id == company_id))
-    return result.scalars().all()
+    async def get_multi_by_company(self, company_id: int, session: AsyncSession):
+        result = await session.execute(select(self.model).where(self.model.company_id == company_id))
+        return result.scalars().all()
 
 
 class CRUDMembership(CRUDBase):
