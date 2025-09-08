@@ -1,10 +1,10 @@
-from http import HTTPStatus  # noqa: I001
+from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import user_admin_or_superuser, user_member_or_superuser
+from app.api.dependencies import generate_invite_code, user_admin_or_superuser, user_member_or_superuser
 from app.api.validators import (
     check_company_exists,
     check_department_in_company_exists,
@@ -12,7 +12,7 @@ from app.api.validators import (
 )
 from app.core.db import get_async_session
 from app.core.user import current_user
-from app.crud.company import company_crud, department_crud, membership_crud, news_crud
+from app.crud.company import company_crud, department_crud, invites_crud, membership_crud, news_crud
 from app.models.company import UserRole
 from app.models.user import User
 from app.schemas.company import (
@@ -27,11 +27,14 @@ from app.schemas.company import (
     DepartmentCreate,
     DepartmentRead,
     DepartmentUpdate,
+    InviteCreate,
+    InviteRead,
 )
 
-router = APIRouter(prefix='/companies')
 COMPANY_NAME_EXISTS = 'Компания с именем "{}" уже существует.'
 DEPARTMENT_NAME_EXISTS = 'В компании id={} уже существует отдел "{}".'
+
+router = APIRouter(prefix='/companies')
 
 
 @router.post('/', response_model=CompanyMembershipRead, response_model_exclude_none=True)
@@ -194,3 +197,25 @@ async def update_department(
 async def delete_department(company_id: int, department_id: int, session: AsyncSession = Depends(get_async_session)):
     department = await check_department_in_company_exists(department_id, company_id, session)
     return await department_crud.remove(department, session)
+
+
+@router.post(
+    '/{company_id}/invites',
+    response_model=InviteRead,
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_admin_or_superuser)],
+)
+async def send_invite(
+    obj_in: InviteCreate,
+    company_id: int,
+    # background: BackgroundTasks,
+    code: str = Depends(generate_invite_code),
+    session: AsyncSession = Depends(get_async_session),
+):
+    if obj_in.department_id is not None:
+        await check_department_in_company_exists(obj_in.department_id, company_id, session)
+    else:
+        await check_company_exists(company_id, session)
+    invite = await invites_crud.create(obj_in, company_id, code, session)
+    # background.add_task
+    return invite

@@ -3,9 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.crud.base import CRUDBase
-from app.models.company import Company, CompanyNews, Department, UserCompanyMembership
+from app.models.company import Company, CompanyNews, Department, Invite, UserCompanyMembership
 from app.models.user import User
-from app.schemas.company import CompanyNewsCreate, DepartmentCreate
+from app.schemas.company import CompanyNewsCreate, DepartmentCreate, InviteCreate
 
 
 class CRUDCompany(CRUDBase):
@@ -62,7 +62,20 @@ class CRUDNews(CRUDBase):
         return result.scalars().all()
 
 
+class CRUDInvites(CRUDBase):
+    async def create(self, obj_in: InviteCreate, company_id: int, code: str, session: AsyncSession):
+        data = obj_in.model_dump()
+        data['code'] = code
+        data['company_id'] = company_id
+        db_obj = self.model(**data)
+        session.add(db_obj)
+        await session.commit()
+        await session.refresh(db_obj)
+        return db_obj
+
+
 company_crud = CRUDCompany(Company)
 department_crud = CRUDDepartment(Department)
 membership_crud = CRUDMembership(UserCompanyMembership)
 news_crud = CRUDNews(CompanyNews)
+invites_crud = CRUDInvites(Invite)

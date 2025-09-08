@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.constants import (
     COMPANY_NAME_MAX_LENGTH,
     DEPARTMENT_NAME_MAX_LENGTH,
+    INVITE_CODE_LENGTH,
     NEWS_BODY_MAX_LENGTH,
     NEWS_TITLE_MAX_LENGTH,
 )
@@ -54,8 +55,8 @@ class CompanyNews(Base):
 
 
 class Invite(Base):
-    code: Mapped[str] = mapped_column(String(6), unique=True)
+    code: Mapped[str] = mapped_column(String(INVITE_CODE_LENGTH), unique=True, index=True)
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
     department_id: Mapped[int | None] = mapped_column(ForeignKey('department.id', ondelete='SET NULL'))
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
-    created_by: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
+    email: Mapped[str] = mapped_column(String(length=320))

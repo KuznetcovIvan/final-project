@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.core.constants import (
     COMPANY_NAME_MAX_LENGTH,
@@ -121,3 +121,19 @@ class CompanyNewsUpdate(CompanyNewsBase):
     title: str | None = Field(None, max_length=NEWS_TITLE_MAX_LENGTH)
     body: str | None = Field(None, max_length=NEWS_BODY_MAX_LENGTH)
     published_at: datetime | None = None
+
+
+class InviteBase(BaseModel):
+    department_id: int | None = None
+    role: UserRole
+    email: EmailStr
+
+
+class InviteCreate(InviteBase):
+    pass
+
+
+class InviteRead(InviteBase):
+    code: str
+
+    model_config = ConfigDict(from_attributes=True)
