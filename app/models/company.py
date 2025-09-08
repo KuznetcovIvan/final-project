@@ -55,8 +55,9 @@ class CompanyNews(Base):
 
 
 class Invite(Base):
-    code: Mapped[str] = mapped_column(String(INVITE_CODE_LENGTH), unique=True, index=True)
+    code: Mapped[str] = mapped_column(String(INVITE_CODE_LENGTH), unique=True)
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
     department_id: Mapped[int | None] = mapped_column(ForeignKey('department.id', ondelete='SET NULL'))
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
     email: Mapped[str] = mapped_column(String(length=320))
+    manager_id: Mapped[int | None] = mapped_column(ForeignKey('user.id', ondelete='SET NULL'))

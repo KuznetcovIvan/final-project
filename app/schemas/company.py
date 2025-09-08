@@ -127,6 +127,7 @@ class InviteBase(BaseModel):
     department_id: int | None = None
     role: UserRole
     email: EmailStr
+    manager_id: int | None = None
 
 
 class InviteCreate(InviteBase):

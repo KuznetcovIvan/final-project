@@ -1,4 +1,4 @@
-from http import HTTPStatus
+from http import HTTPStatus  # noqa: I001
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -9,6 +9,8 @@ from app.api.validators import (
     check_company_exists,
     check_department_in_company_exists,
     check_news_in_company_exists,
+    check_invite_exists,
+    check_before_invite,
 )
 from app.core.db import get_async_session
 from app.core.user import current_user
@@ -34,6 +36,7 @@ from app.services.invite import send_invite_email
 
 COMPANY_NAME_EXISTS = 'Компания с именем "{}" уже существует.'
 DEPARTMENT_NAME_EXISTS = 'В компании id={} уже существует отдел "{}".'
+MEMBERSHIP_EXISTS = 'Пользователь id={} уже состоит в компании id={}'
 
 router = APIRouter(prefix='/companies')
 
@@ -213,10 +216,36 @@ async def send_invite(
     code: str = Depends(generate_invite_code),
     session: AsyncSession = Depends(get_async_session),
 ):
-    if obj_in.department_id is None:
-        await check_company_exists(company_id, session)
-    else:
-        await check_department_in_company_exists(obj_in.department_id, company_id, session)
+    await check_before_invite(obj_in, company_id, session)
     invite = await invites_crud.create(obj_in, company_id, code, session)
     background.add_task(send_invite_email, obj_in.email, code)
     return invite
+
+
+@router.post('/invites/accept', response_model=CompanyMembershipRead, response_model_exclude_none=True)
+async def accept_invite(
+    code: str, user: User = Depends(current_user), session: AsyncSession = Depends(get_async_session)
+):
+    invite = await check_invite_exists(code, session)
+    try:
+        membership = await membership_crud.create(
+            CompanyMembershipCreate(
+                user_id=user.id,
+                company_id=invite.company_id,
+                department_id=invite.department_id,
+                manager_id=invite.manager_id,
+                role=invite.role,
+            ),
+            session,
+            user,
+            commit=False,
+        )
+        await session.delete(invite)
+        await session.commit()
+        await session.refresh(membership)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=MEMBERSHIP_EXISTS.format(user.id, invite.company_id)
+        )
+    return membership

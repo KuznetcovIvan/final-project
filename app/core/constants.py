@@ -1,3 +1,5 @@
+from string import ascii_letters, digits
+
 AUTH_PREFIX = '/auth/jwt'
 SWAGGER_TOKEN_URL = f'/api/v1{AUTH_PREFIX}/login'
 MIN_LEN_PASSWORD = 6
@@ -9,5 +11,5 @@ NEWS_TITLE_MAX_LENGTH = 255
 NEWS_BODY_MAX_LENGTH = 4000
 
 INVITE_CODE_LENGTH = 6
-INVITE_CODE_CHARS = '0123456789'
+INVITE_CODE_CHARS = ascii_letters + digits
 MAX_INVITE_CODE_ATTEMPTS = 5
