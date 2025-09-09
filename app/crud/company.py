@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.constants import INVITE_CODE_DAYS_TTL
 from app.crud.base import CRUDBase
-from app.models.company import Company, CompanyNews, Department, Invite, UserCompanyMembership
+from app.models.company import Company, CompanyNews, Department, Invite, UserCompanyMembership, UserRole
 from app.models.user import User
 from app.schemas.company import CompanyNewsCreate, DepartmentCreate, InviteCreate
 
@@ -47,6 +47,19 @@ class CRUDMembership(CRUDBase):
             select(self.model).where(self.model.user_id == user_id, self.model.company_id == company_id)
         )
         return result.scalars().first()
+
+    async def get_multi_by_company(self, company_id: int, session: AsyncSession):
+        result = await session.execute(select(self.model).where(self.model.company_id == company_id))
+        return result.scalars().all()
+
+    async def count_company_admins(self, company_id: int, session: AsyncSession):
+        result = await session.execute(
+            select(func.count()).where(
+                self.model.company_id == company_id,
+                self.model.role == UserRole.ADMIN,
+            )
+        )
+        return result.scalar_one()
 
 
 class CRUDNews(CRUDBase):

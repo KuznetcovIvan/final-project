@@ -7,10 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import generate_invite_code, user_admin_or_superuser, user_member_or_superuser
 from app.api.validators import (
     check_company_exists,
+    check_membership_in_company_exists,
     check_department_in_company_exists,
     check_news_in_company_exists,
     check_invite_exists,
     check_before_invite,
+    check_before_update_membership,
+    check_before_delete_membership,
+    check_before_leave,
 )
 from app.core.db import get_async_session
 from app.core.user import current_user
@@ -21,6 +25,7 @@ from app.schemas.company import (
     CompanyCreate,
     CompanyMembershipCreate,
     CompanyMembershipRead,
+    CompanyMembershipUpdate,
     CompanyNewsCreate,
     CompanyNewsRead,
     CompanyNewsUpdate,
@@ -38,10 +43,11 @@ COMPANY_NAME_EXISTS = 'Компания с именем "{}" уже сущест
 DEPARTMENT_NAME_EXISTS = 'В компании id={} уже существует отдел "{}".'
 MEMBERSHIP_EXISTS = 'Пользователь id={} уже состоит в компании id={}'
 
+
 router = APIRouter(prefix='/companies')
 
 
-@router.post('/', response_model=CompanyMembershipRead, response_model_exclude_none=True)
+@router.post('/', response_model=CompanyMembershipRead, response_model_exclude_none=True, tags=['Компании'])
 async def create_new_company(
     obj_in: CompanyCreate, session: AsyncSession = Depends(get_async_session), user: User = Depends(current_user)
 ):
@@ -61,7 +67,7 @@ async def create_new_company(
     return membership
 
 
-@router.get('/', response_model=list[CompanyRead], response_model_exclude_none=True)
+@router.get('/', response_model=list[CompanyRead], response_model_exclude_none=True, tags=['Компании'])
 async def get_all_companies(session: AsyncSession = Depends(get_async_session), user: User = Depends(current_user)):
     return await company_crud.get_multi_by_user(user, session)
 
@@ -71,6 +77,7 @@ async def get_all_companies(session: AsyncSession = Depends(get_async_session), 
     response_model=CompanyRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Компании'],
 )
 async def update_company(company_id: int, obj_in: CompanyUpdate, session: AsyncSession = Depends(get_async_session)):
     try:
@@ -86,6 +93,7 @@ async def update_company(company_id: int, obj_in: CompanyUpdate, session: AsyncS
     response_model=CompanyRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Компании'],
 )
 async def remove_company(company_id: int, session: AsyncSession = Depends(get_async_session)):
     return await company_crud.remove(await check_company_exists(company_id, session), session)
@@ -96,13 +104,16 @@ async def remove_company(company_id: int, session: AsyncSession = Depends(get_as
     response_model=list[CompanyNewsRead],
     response_model_exclude_none=True,
     dependencies=[Depends(user_member_or_superuser)],
+    tags=['Новости компании'],
 )
 async def get_all_news(company_id: int, session: AsyncSession = Depends(get_async_session)):
     await check_company_exists(company_id, session)
     return await news_crud.get_multi_by_company(company_id, session)
 
 
-@router.post('/{company_id}/news', response_model=CompanyNewsRead, response_model_exclude_none=True)
+@router.post(
+    '/{company_id}/news', response_model=CompanyNewsRead, response_model_exclude_none=True, tags=['Новости компании']
+)
 async def create_news(
     company_id: int,
     obj_in: CompanyNewsCreate,
@@ -118,6 +129,7 @@ async def create_news(
     response_model=CompanyNewsRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Новости компании'],
 )
 async def update_news(
     news_id: int, company_id: int, obj_in: CompanyNewsUpdate, session: AsyncSession = Depends(get_async_session)
@@ -131,6 +143,7 @@ async def update_news(
     response_model=CompanyNewsRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Новости компании'],
 )
 async def remove_news(news_id: int, company_id: int, session: AsyncSession = Depends(get_async_session)):
     news = await check_news_in_company_exists(news_id, company_id, session)
@@ -142,6 +155,7 @@ async def remove_news(news_id: int, company_id: int, session: AsyncSession = Dep
     response_model=list[DepartmentRead],
     response_model_exclude_none=True,
     dependencies=[Depends(user_member_or_superuser)],
+    tags=['Отделы компании'],
 )
 async def get_all_departments(company_id: int, session: AsyncSession = Depends(get_async_session)):
     await check_company_exists(company_id, session)
@@ -153,6 +167,7 @@ async def get_all_departments(company_id: int, session: AsyncSession = Depends(g
     response_model=DepartmentRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Отделы компании'],
 )
 async def create_department(
     company_id: int, obj_in: DepartmentCreate, session: AsyncSession = Depends(get_async_session)
@@ -173,6 +188,7 @@ async def create_department(
     response_model=DepartmentRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Отделы компании'],
 )
 async def update_department(
     company_id: int,
@@ -197,6 +213,7 @@ async def update_department(
     response_model=DepartmentRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Отделы компании'],
 )
 async def delete_department(company_id: int, department_id: int, session: AsyncSession = Depends(get_async_session)):
     department = await check_department_in_company_exists(department_id, company_id, session)
@@ -208,6 +225,7 @@ async def delete_department(company_id: int, department_id: int, session: AsyncS
     response_model=InviteRead,
     response_model_exclude_none=True,
     dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Приглашения'],
 )
 async def send_invite(
     obj_in: InviteCreate,
@@ -222,11 +240,13 @@ async def send_invite(
     return invite
 
 
-@router.post('/invites/accept', response_model=CompanyMembershipRead, response_model_exclude_none=True)
+@router.post(
+    '/invites/accept', response_model=CompanyMembershipRead, response_model_exclude_none=True, tags=['Приглашения']
+)
 async def accept_invite(
     code: str, user: User = Depends(current_user), session: AsyncSession = Depends(get_async_session)
 ):
-    invite = await check_invite_exists(code, session)
+    invite = await check_invite_exists(code, user, session)
     try:
         membership = await membership_crud.create(
             CompanyMembershipCreate(
@@ -248,4 +268,73 @@ async def accept_invite(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail=MEMBERSHIP_EXISTS.format(user.id, invite.company_id)
         )
+    return membership
+
+
+@router.get(
+    '/{company_id}/memberships',
+    response_model=list[CompanyMembershipRead],
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_member_or_superuser)],
+    tags=['Участники компании'],
+)
+async def get_all_memberships(company_id: int, session: AsyncSession = Depends(get_async_session)):
+    await check_company_exists(company_id, session)
+    return await membership_crud.get_multi_by_company(company_id, session)
+
+
+@router.patch(
+    '/{company_id}/memberships/{membership_id}',
+    response_model=CompanyMembershipRead,
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Участники компании'],
+)
+async def update_membership(
+    company_id: int,
+    membership_id: int,
+    obj_in: CompanyMembershipUpdate,
+    session: AsyncSession = Depends(get_async_session),
+):
+    membership = await check_membership_in_company_exists(membership_id, company_id, session)
+    await check_before_update_membership(obj_in, company_id, membership, session)
+    try:
+        return await membership_crud.update(membership, obj_in, session)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=MEMBERSHIP_EXISTS.format(membership.user_id, company_id)
+        )
+
+
+@router.delete(
+    '/{company_id}/memberships/{membership_id}',
+    response_model=CompanyMembershipRead,
+    response_model_exclude_none=True,
+    dependencies=[Depends(user_admin_or_superuser)],
+    tags=['Участники компании'],
+)
+async def delete_membership(
+    company_id: int,
+    membership_id: int,
+    session: AsyncSession = Depends(get_async_session),
+):
+    membership = await check_before_delete_membership(membership_id, company_id, session)
+    await session.delete(membership)
+    await session.commit()
+    return membership
+
+
+@router.post(
+    '/{company_id}/memberships/leave',
+    response_model=CompanyMembershipRead,
+    response_model_exclude_none=True,
+    tags=['Участники компании'],
+)
+async def leave_company(
+    company_id: int, user: User = Depends(current_user), session: AsyncSession = Depends(get_async_session)
+):
+    membership = await check_before_leave(user.id, company_id, session)
+    await session.delete(membership)
+    await session.commit()
     return membership

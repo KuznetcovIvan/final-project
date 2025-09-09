@@ -92,6 +92,8 @@ class CompanyNewsBase(BaseModel):
     body: str = Field(..., max_length=NEWS_BODY_MAX_LENGTH)
     published_at: datetime = Field(default_factory=datetime.now)
 
+
+class CompanyNewsCreate(CompanyNewsBase):
     @field_validator('title', 'body', 'published_at')
     def check_not_none(cls, value):
         if value is None:
@@ -105,15 +107,10 @@ class CompanyNewsBase(BaseModel):
         return value
 
 
-class CompanyNewsCreate(CompanyNewsBase):
-    pass
-
-
 class CompanyNewsRead(CompanyNewsBase):
     id: int
     company_id: int
     author_id: int
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -121,6 +118,18 @@ class CompanyNewsUpdate(CompanyNewsBase):
     title: str | None = Field(None, max_length=NEWS_TITLE_MAX_LENGTH)
     body: str | None = Field(None, max_length=NEWS_BODY_MAX_LENGTH)
     published_at: datetime | None = None
+
+    @field_validator('title', 'body', 'published_at')
+    def check_not_none(cls, value):
+        if value is None:
+            raise ValueError(FIELD_CANT_BE_EMPTY)
+        return value
+
+    @field_validator('published_at')
+    def check_publish_datetime(cls, value):
+        if value.date() < datetime.now().date():
+            raise ValueError(DATE_CANT_BE_IN_PAST)
+        return value
 
 
 class InviteBase(BaseModel):

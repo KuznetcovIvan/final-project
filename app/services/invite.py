@@ -3,7 +3,7 @@ from fastapi_mail import MessageSchema
 from app.core.config import settings
 from app.core.mail import mail
 
-INVITE_LINK_TEMPLATE = f'{settings.app_host}/api/v1/invites/accept?code={{code}}'
+INVITE_LINK_TEMPLATE = f'{settings.app_host}/api/v1/companies/invites/accept?code={{code}}'
 SUBJECT = f'Приглашение в {settings.app_title}'
 BODY_TEMPLATE = f"""
 <h3>Вас пригласили в {settings.app_title}</h3>
