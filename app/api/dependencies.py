@@ -14,6 +14,7 @@ from app.models.user import User
 NOT_COMPANY_ADMIN = 'Требуются права администратора компании или суперпользователя!'
 NOT_COMPANY_MEMBER = 'Вы не являетесь работником этой компании!'
 CODE_GENERATION_FAILED = 'Не удалось сгенерировать код приглашения!'
+NOT_MANAGER_OR_ADMIN = 'Требуются права менеджера, администратора или суперпользователя!'
 
 
 async def user_admin_or_superuser(
@@ -46,3 +47,14 @@ async def generate_invite_code(session: AsyncSession = Depends(get_async_session
         if await invites_crud.get_by_attribute('code', code, session) is None:
             return code
     raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=CODE_GENERATION_FAILED)
+
+
+async def user_manager_admin_or_superuser(
+    company_id: int, user: User = Depends(current_user), session: AsyncSession = Depends(get_async_session)
+) -> User:
+    if user.is_superuser:
+        return user
+    membership = await membership_crud.get_by_user_and_company(user.id, company_id, session)
+    if membership is None or membership.role not in {UserRole.MANAGER, UserRole.ADMIN}:
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=NOT_MANAGER_OR_ADMIN)
+    return user

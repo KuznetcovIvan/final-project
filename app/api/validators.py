@@ -20,6 +20,8 @@ MANAGER_NOT_IN_COMPANY = 'Пользователь id={} не состоит в 
 MANAGER_ROLE_REQUIRED = 'Пользователь id={} не менеджер и не админ компании id={}.'
 SELF_MANAGER_FORBIDDEN = 'Нельзя назначить менеджером самого себя.'
 LAST_ADMIN_FORBIDDEN = 'Нельзя удалить единственного администратора компании.'
+EXECUTOR_NOT_IN_COMPANY = 'Исполнитель с id={} не состоит в этой компании!'
+ONLY_SUBORDINATES = 'Исполнитель с id={} не подчиняется пользователю с id={}!'
 
 
 async def check_company_exists(company_id: int, session: AsyncSession) -> Company:
@@ -70,7 +72,7 @@ async def check_invite_exists(code: str, user: User, session: AsyncSession) -> I
     return invite
 
 
-async def check_manager_in_company(manager_id: int, company_id: int, session):
+async def check_manager_in_company(manager_id: int, company_id: int, session) -> UserCompanyMembership:
     membership = await membership_crud.get_by_user_and_company(manager_id, company_id, session)
     if membership is None:
         raise HTTPException(
@@ -82,6 +84,7 @@ async def check_manager_in_company(manager_id: int, company_id: int, session):
             status_code=HTTPStatus.BAD_REQUEST,
             detail=MANAGER_ROLE_REQUIRED.format(manager_id, company_id),
         )
+    return membership
 
 
 async def check_before_invite(obj_in: InviteCreate, company_id: int, session: AsyncSession):
@@ -127,3 +130,24 @@ async def check_before_leave(user_id: int, company_id: int, session: AsyncSessio
         )
     await check_last_admin(membership, company_id, session)
     return membership
+
+
+async def check_executor_in_company(
+    executor_user_id: int, company_id: int, session: AsyncSession
+) -> UserCompanyMembership:
+    membership = await membership_crud.get_by_user_and_company(executor_user_id, company_id, session)
+    if membership is None:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=EXECUTOR_NOT_IN_COMPANY.format(executor_user_id))
+    return membership
+
+
+async def check_manager_can_create_task(
+    manager_id: int, company_id: int, executor_membership, session: AsyncSession
+) -> None:
+    manager_membership = await check_manager_in_company(manager_id, company_id, session)
+    if manager_membership.role == UserRole.ADMIN:
+        return
+    if manager_membership.role == UserRole.MANAGER and executor_membership.manager_id != manager_id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail=ONLY_SUBORDINATES.format(executor_membership.user_id, manager_id)
+        )
