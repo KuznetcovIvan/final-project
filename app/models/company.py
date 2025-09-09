@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import Enum, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import (
@@ -61,3 +61,4 @@ class Invite(Base):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)
     email: Mapped[str] = mapped_column(String(length=320))
     manager_id: Mapped[int | None] = mapped_column(ForeignKey('user.id', ondelete='SET NULL'))
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)

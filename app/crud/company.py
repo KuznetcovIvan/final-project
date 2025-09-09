@@ -1,7 +1,10 @@
-from sqlalchemy import select
+from datetime import datetime, timedelta
+
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.constants import INVITE_CODE_DAYS_TTL
 from app.crud.base import CRUDBase
 from app.models.company import Company, CompanyNews, Department, Invite, UserCompanyMembership
 from app.models.user import User
@@ -67,11 +70,16 @@ class CRUDInvites(CRUDBase):
         data = obj_in.model_dump()
         data['code'] = code
         data['company_id'] = company_id
+        data['expires_at'] = datetime.now() + timedelta(days=INVITE_CODE_DAYS_TTL)
         db_obj = self.model(**data)
         session.add(db_obj)
         await session.commit()
         await session.refresh(db_obj)
         return db_obj
+
+    async def cleanup_expired_invites(self, session: AsyncSession):
+        await session.execute(delete(self.model).where(self.model.expires_at < datetime.now()))
+        await session.commit()
 
 
 company_crud = CRUDCompany(Company)

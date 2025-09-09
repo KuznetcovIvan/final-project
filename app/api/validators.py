@@ -1,3 +1,4 @@
+from datetime import datetime
 from http import HTTPStatus
 
 from fastapi import HTTPException
@@ -5,12 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.company import company_crud, department_crud, invites_crud, membership_crud, news_crud
 from app.models.company import Company, CompanyNews, Department, Invite, UserRole
+from app.models.user import User
 from app.schemas.company import InviteCreate
 
 COMPANY_NOT_FOUND = 'Компания с id={} не найдена!'
 NEWS_NOT_FOUND = 'В компании id={} нет новости с id={}!'
 DEPARTMENT_NOT_FOUND = 'В компании id={} нет отдела с id={}!'
 INVITE_NOT_FOUND = 'Код приглашения "{}" не найден или устарел!'
+INVITE_EMAIL_MISMATCH = 'Инвайт предназначен для другого адреса почты!'
 MANAGER_NOT_IN_COMPANY = 'Пользователь id={} не состоит в компании id={}.'
 MANAGER_ROLE_REQUIRED = 'Пользователь id={} не менеджер и не админ компании id={}.'
 
@@ -38,10 +41,12 @@ async def check_department_in_company_exists(department_id: int, company_id: int
     return department
 
 
-async def check_invite_exists(code: str, session: AsyncSession) -> Invite:
+async def check_invite_exists(code: str, user: User, session: AsyncSession) -> Invite:
     invite = await invites_crud.get_by_attribute('code', code, session)
-    if not invite:
+    if not invite or invite.expires_at < datetime.now():
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=INVITE_NOT_FOUND.format(code))
+    if invite.email.strip().lower() != user.email.strip().lower():
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=INVITE_EMAIL_MISMATCH)
     return invite
 
 
