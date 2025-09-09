@@ -20,8 +20,8 @@ class Task(Base):
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
     author_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
     executor_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
-    start_at: Mapped[datetime | None] = mapped_column(DateTime)
-    due_at: Mapped[datetime | None] = mapped_column(DateTime)
+    start_at: Mapped[datetime] = mapped_column(DateTime)
+    due_at: Mapped[datetime] = mapped_column(DateTime)
 
 
 class TaskComment(Base):

@@ -1,22 +1,30 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from app.models.task import TaskStatus
 
 FIELD_CANT_BE_EMPTY = 'Поле не может быть пустым!'
+INVALID_DATES = 'Дата завершения не может быть раньше даты начала!'
+BOTH_OR_NONE_DATES = 'Необходимо указать обе даты, либо не указывать ни одной!'
 
 
 class TaskBase(BaseModel):
     title: str
     body: str
-    start_at: datetime | None = None
-    due_at: datetime | None = None
+    start_at: datetime
+    due_at: datetime
 
 
 class TaskCreate(TaskBase):
     executor_id: int
     status: TaskStatus = TaskStatus.TODO
+
+    @model_validator()
+    def check_dates(cls, values):
+        if values.start_at and values.due_at and values.due_at < values.start_at:
+            raise ValueError(INVALID_DATES)
+        return values
 
 
 class TaskRead(TaskBase):
@@ -36,11 +44,19 @@ class TaskUpdate(BaseModel):
     start_at: datetime | None = None
     due_at: datetime | None = None
 
-    @field_validator('title', 'body', 'status')
+    @field_validator('title', 'body', 'status', 'start_at', 'due_at')
     def check_not_none(cls, value):
         if value is None:
             raise ValueError(FIELD_CANT_BE_EMPTY)
         return value
+
+    @model_validator()
+    def check_dates(cls, values):
+        if (values.start_at is None) != (values.due_at is None):
+            raise ValueError(BOTH_OR_NONE_DATES)
+        if values.start_at and values.due_at and values.due_at < values.start_at:
+            raise ValueError(INVALID_DATES)
+        return values
 
 
 class TaskCommentCreate(BaseModel):

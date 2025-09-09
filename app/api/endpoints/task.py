@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +21,12 @@ from app.schemas.task import TaskCommentCreate, TaskCommentRead, TaskCommentUpda
 router = APIRouter(prefix='/companies')
 
 
-@router.post('/{company_id}/tasks', response_model=TaskRead, tags=['Задачи'])
+class TaskTags(StrEnum):
+    TASKS = 'Задачи'
+    COMMENTS = 'Комментарии к задаче'
+
+
+@router.post('/{company_id}/tasks', response_model=TaskRead, tags=[TaskTags.TASKS])
 async def create_task(
     company_id: int,
     obj_in: TaskCreate,
@@ -36,13 +43,13 @@ async def create_task(
     '/{company_id}/tasks',
     response_model=list[TaskRead],
     dependencies=[Depends(user_member_or_superuser)],
-    tags=['Задачи'],
+    tags=[TaskTags.TASKS],
 )
 async def get_all_tasks(company_id: int, session: AsyncSession = Depends(get_async_session)):
     return await task_crud.get_multi_by_company(company_id, session)
 
 
-@router.patch('/{company_id}/tasks/{task_id}', response_model=TaskRead, tags=['Задачи'])
+@router.patch('/{company_id}/tasks/{task_id}', response_model=TaskRead, tags=[TaskTags.TASKS])
 async def update_task(
     company_id: int,
     task_id: int,
@@ -55,7 +62,7 @@ async def update_task(
     return await task_crud.update(task, obj_in, session)
 
 
-@router.delete('/{company_id}/tasks/{task_id}', response_model=TaskRead, tags=['Задачи'])
+@router.delete('/{company_id}/tasks/{task_id}', response_model=TaskRead, tags=[TaskTags.TASKS])
 async def delete_task(
     company_id: int,
     task_id: int,
@@ -67,7 +74,7 @@ async def delete_task(
     return await task_crud.remove(task, session)
 
 
-@router.post('/{company_id}/tasks/{task_id}/comments', response_model=TaskCommentRead, tags=['Коментарии к задаче'])
+@router.post('/{company_id}/tasks/{task_id}/comments', response_model=TaskCommentRead, tags=[TaskTags.COMMENTS])
 async def create_task_comment(
     company_id: int,
     task_id: int,
@@ -83,7 +90,7 @@ async def create_task_comment(
     '/{company_id}/tasks/{task_id}/comments',
     response_model=list[TaskCommentRead],
     dependencies=[Depends(user_member_or_superuser)],
-    tags=['Коментарии к задаче'],
+    tags=[TaskTags.COMMENTS],
 )
 async def get_all_task_comments(
     company_id: int,
@@ -95,7 +102,7 @@ async def get_all_task_comments(
 
 
 @router.patch(
-    '/{company_id}/tasks/{task_id}/comments/{comment_id}', response_model=TaskCommentRead, tags=['Коментарии к задаче']
+    '/{company_id}/tasks/{task_id}/comments/{comment_id}', response_model=TaskCommentRead, tags=[TaskTags.COMMENTS]
 )
 async def update_task_comment(
     company_id: int,
@@ -111,7 +118,7 @@ async def update_task_comment(
 
 
 @router.delete(
-    '/{company_id}/tasks/{task_id}/comments/{comment_id}', response_model=TaskCommentRead, tags=['Коментарии к задаче']
+    '/{company_id}/tasks/{task_id}/comments/{comment_id}', response_model=TaskCommentRead, tags=[TaskTags.COMMENTS]
 )
 async def delete_task_comment(
     company_id: int,
