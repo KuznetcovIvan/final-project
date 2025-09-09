@@ -5,7 +5,7 @@ from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.constants import JWT_LIFETIME, MIN_LEN_PASSWORD, TOKEN_URL
+from app.core.constants import JWT_LIFETIME, MIN_LEN_PASSWORD, SWAGGER_TOKEN_URL
 from app.core.db import get_async_session
 from app.models.user import User
 from app.schemas.user import UserCreate
@@ -23,7 +23,7 @@ def get_jwt_strategy() -> JWTStrategy:
 
 
 auth_backend = AuthenticationBackend(
-    name='jwt', transport=BearerTransport(tokenUrl=TOKEN_URL), get_strategy=get_jwt_strategy
+    name='jwt', transport=BearerTransport(tokenUrl=SWAGGER_TOKEN_URL), get_strategy=get_jwt_strategy
 )
 
 

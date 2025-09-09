@@ -8,10 +8,12 @@ wheels/
 
 # Virtual environments
 .venv/
-.temp/
 
 # Environments
 .env
 
 # Ruff
 .ruff_cache/
+
+dump.py
+*_dump_*
