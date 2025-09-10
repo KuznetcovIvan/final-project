@@ -20,7 +20,7 @@ class TaskCreate(TaskBase):
     executor_id: int
     status: TaskStatus = TaskStatus.TODO
 
-    @model_validator()
+    @model_validator(mode='after')
     def check_dates(cls, values):
         if values.start_at and values.due_at and values.due_at < values.start_at:
             raise ValueError(INVALID_DATES)
@@ -50,7 +50,7 @@ class TaskUpdate(BaseModel):
             raise ValueError(FIELD_CANT_BE_EMPTY)
         return value
 
-    @model_validator()
+    @model_validator(mode='after')
     def check_dates(cls, values):
         if (values.start_at is None) != (values.due_at is None):
             raise ValueError(BOTH_OR_NONE_DATES)

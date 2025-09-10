@@ -9,9 +9,9 @@ from app.api.validators import (
     check_can_manage_comment,
     check_can_update_task,
     check_comment_in_task_and_company,
-    check_executor_in_company,
     check_manager_can_create_task,
-    check_task_in_company,
+    check_user_in_company,
+    get_in_company_or_404,
 )
 from app.core.db import get_async_session
 from app.crud.task import task_comment_crud, task_crud
@@ -33,7 +33,7 @@ async def create_task(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(user_manager_admin_or_superuser),
 ):
-    executor_membership = await check_executor_in_company(obj_in.executor_id, company_id, session)
+    executor_membership = await check_user_in_company(obj_in.executor_id, company_id, session)
     if not user.is_superuser:
         await check_manager_can_create_task(user.id, company_id, executor_membership, session)
     return await task_crud.create_for_company(obj_in, company_id, session, author=user)
@@ -57,7 +57,7 @@ async def update_task(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(user_member_or_superuser),
 ):
-    task = await check_task_in_company(company_id, task_id, session)
+    task = await get_in_company_or_404(task_crud, task_id, company_id, session)
     await check_can_update_task(user, company_id, task, obj_in, session)
     return await task_crud.update(task, obj_in, session)
 
@@ -69,7 +69,7 @@ async def delete_task(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(user_member_or_superuser),
 ):
-    task = await check_task_in_company(company_id, task_id, session)
+    task = await get_in_company_or_404(task_crud, task_id, company_id, session)
     await check_can_delete_task(user, company_id, task, session)
     return await task_crud.remove(task, session)
 
@@ -82,7 +82,7 @@ async def create_task_comment(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(user_member_or_superuser),
 ):
-    await check_task_in_company(company_id, task_id, session)
+    await get_in_company_or_404(task_crud, task_id, company_id, session)
     return await task_comment_crud.create_for_task(obj_in, task_id, session, author=user)
 
 
@@ -92,12 +92,8 @@ async def create_task_comment(
     dependencies=[Depends(user_member_or_superuser)],
     tags=[TaskTags.COMMENTS],
 )
-async def get_all_task_comments(
-    company_id: int,
-    task_id: int,
-    session: AsyncSession = Depends(get_async_session),
-):
-    await check_task_in_company(company_id, task_id, session)
+async def get_all_task_comments(company_id: int, task_id: int, session: AsyncSession = Depends(get_async_session)):
+    await get_in_company_or_404(task_crud, task_id, company_id, session)
     return await task_comment_crud.get_multi_by_task(task_id, session)
 
 

@@ -11,11 +11,9 @@ from app.api.validators import (
     check_before_invite,
     check_before_leave,
     check_before_update_membership,
-    check_company_exists,
-    check_department_in_company_exists,
     check_invite_exists,
-    check_membership_in_company_exists,
-    check_news_in_company_exists,
+    get_in_company_or_404,
+    get_or_404,
 )
 from app.core.db import get_async_session
 from app.core.user import current_user
@@ -40,10 +38,9 @@ from app.schemas.company import (
 )
 from app.services.invite import send_invite_email
 
-COMPANY_NAME_EXISTS = 'Компания с именем "{}" уже существует.'
-DEPARTMENT_NAME_EXISTS = 'В компании id={} уже существует отдел "{}".'
-MEMBERSHIP_EXISTS = 'Пользователь id={} уже состоит в компании id={}.'
-
+COMPANY_NAME_EXISTS = 'Компания с именем "{}" уже существует!'
+DEPARTMENT_NAME_EXISTS = 'В компании id={} уже существует отдел "{}"!'
+MEMBERSHIP_EXISTS = 'Пользователь id={} уже состоит в компании id={}!'
 
 router = APIRouter(prefix='/companies')
 
@@ -90,7 +87,7 @@ async def get_all_companies(session: AsyncSession = Depends(get_async_session), 
 )
 async def update_company(company_id: int, obj_in: CompanyUpdate, session: AsyncSession = Depends(get_async_session)):
     try:
-        company = await company_crud.update(await check_company_exists(company_id, session), obj_in, session)
+        company = await company_crud.update(await get_or_404(company_crud, company_id, session), obj_in, session)
     except IntegrityError:
         await session.rollback()
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=COMPANY_NAME_EXISTS.format(obj_in.name))
@@ -105,7 +102,7 @@ async def update_company(company_id: int, obj_in: CompanyUpdate, session: AsyncS
     tags=[CompanyTags.COMPANIES],
 )
 async def remove_company(company_id: int, session: AsyncSession = Depends(get_async_session)):
-    return await company_crud.remove(await check_company_exists(company_id, session), session)
+    return await company_crud.remove(await get_or_404(company_crud, company_id, session), session)
 
 
 @router.get(
@@ -116,7 +113,7 @@ async def remove_company(company_id: int, session: AsyncSession = Depends(get_as
     tags=[CompanyTags.NEWS],
 )
 async def get_all_news(company_id: int, session: AsyncSession = Depends(get_async_session)):
-    await check_company_exists(company_id, session)
+    await get_or_404(company_crud, company_id, session)
     return await news_crud.get_multi_by_company(company_id, session)
 
 
@@ -129,7 +126,7 @@ async def create_news(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(user_admin_or_superuser),
 ):
-    await check_company_exists(company_id, session)
+    await get_or_404(company_crud, company_id, session)
     return await news_crud.create(obj_in, user, company_id, session)
 
 
@@ -143,7 +140,7 @@ async def create_news(
 async def update_news(
     news_id: int, company_id: int, obj_in: CompanyNewsUpdate, session: AsyncSession = Depends(get_async_session)
 ):
-    news = await check_news_in_company_exists(news_id, company_id, session)
+    news = await get_in_company_or_404(news_crud, news_id, company_id, session)
     return await news_crud.update(news, obj_in, session)
 
 
@@ -155,7 +152,7 @@ async def update_news(
     tags=[CompanyTags.NEWS],
 )
 async def remove_news(news_id: int, company_id: int, session: AsyncSession = Depends(get_async_session)):
-    news = await check_news_in_company_exists(news_id, company_id, session)
+    news = await get_in_company_or_404(news_crud, news_id, company_id, session)
     return await news_crud.remove(news, session)
 
 
@@ -167,7 +164,7 @@ async def remove_news(news_id: int, company_id: int, session: AsyncSession = Dep
     tags=[CompanyTags.DEPARTMENTS],
 )
 async def get_all_departments(company_id: int, session: AsyncSession = Depends(get_async_session)):
-    await check_company_exists(company_id, session)
+    await get_or_404(company_crud, company_id, session)
     return await department_crud.get_multi_by_company(company_id, session)
 
 
@@ -181,7 +178,7 @@ async def get_all_departments(company_id: int, session: AsyncSession = Depends(g
 async def create_department(
     company_id: int, obj_in: DepartmentCreate, session: AsyncSession = Depends(get_async_session)
 ):
-    await check_company_exists(company_id, session)
+    await get_or_404(company_crud, company_id, session)
     try:
         department = await department_crud.create(obj_in, company_id, session)
     except IntegrityError:
@@ -207,7 +204,7 @@ async def update_department(
 ):
     try:
         department = await department_crud.update(
-            await check_department_in_company_exists(department_id, company_id, session), obj_in, session
+            await get_in_company_or_404(department_crud, department_id, company_id, session), obj_in, session
         )
     except IntegrityError:
         await session.rollback()
@@ -225,7 +222,7 @@ async def update_department(
     tags=[CompanyTags.DEPARTMENTS],
 )
 async def delete_department(company_id: int, department_id: int, session: AsyncSession = Depends(get_async_session)):
-    department = await check_department_in_company_exists(department_id, company_id, session)
+    department = await get_in_company_or_404(department_crud, department_id, company_id, session)
     return await department_crud.remove(department, session)
 
 
@@ -291,7 +288,7 @@ async def accept_invite(
     tags=[CompanyTags.MEMBERS],
 )
 async def get_all_memberships(company_id: int, session: AsyncSession = Depends(get_async_session)):
-    await check_company_exists(company_id, session)
+    await get_or_404(company_crud, company_id, session)
     return await membership_crud.get_multi_by_company(company_id, session)
 
 
@@ -308,7 +305,7 @@ async def update_membership(
     obj_in: CompanyMembershipUpdate,
     session: AsyncSession = Depends(get_async_session),
 ):
-    membership = await check_membership_in_company_exists(membership_id, company_id, session)
+    membership = await get_in_company_or_404(membership_crud, membership_id, company_id, session)
     await check_before_update_membership(obj_in, company_id, membership, session)
     try:
         return await membership_crud.update(membership, obj_in, session)
