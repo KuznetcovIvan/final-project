@@ -5,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import generate_invite_code, user_admin_or_superuser, user_member_or_superuser
+from app.api.dependencies import user_admin_or_superuser, user_member_or_superuser
 from app.api.validators import (
     check_before_delete_membership,
     check_before_invite,
@@ -36,7 +36,7 @@ from app.schemas.company import (
     InviteCreate,
     InviteRead,
 )
-from app.services.invite import send_invite_email
+from app.services.invite import generate_invite_code, send_invite_email
 
 COMPANY_NAME_EXISTS = 'Компания с именем "{}" уже существует!'
 DEPARTMENT_NAME_EXISTS = 'В компании id={} уже существует отдел "{}"!'
@@ -237,10 +237,10 @@ async def send_invite(
     obj_in: InviteCreate,
     company_id: int,
     background: BackgroundTasks,
-    code: str = Depends(generate_invite_code),
     session: AsyncSession = Depends(get_async_session),
 ):
     await check_before_invite(obj_in, company_id, session)
+    code = generate_invite_code(session)
     invite = await invites_crud.create(obj_in, company_id, code, session)
     background.add_task(send_invite_email, obj_in.email, code)
     return invite

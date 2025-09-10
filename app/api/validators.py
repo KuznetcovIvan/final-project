@@ -8,7 +8,7 @@ from app.crud.base import CRUDBase
 from app.crud.company import company_crud, department_crud, invites_crud, membership_crud
 from app.crud.task import task_comment_crud, task_crud
 from app.models.company import Invite, UserCompanyMembership, UserRole
-from app.models.task import Task, TaskComment
+from app.models.task import Task, TaskComment, TaskStatus
 from app.models.user import User
 from app.schemas.company import CompanyMembershipUpdate, InviteCreate
 from app.schemas.task import TaskUpdate
@@ -27,6 +27,8 @@ CANNOT_EDIT_TASK = 'У пользователя id={} нет прав на ре�
 CANNOT_DELETE_TASK = 'У пользователя id={} нет прав на удаление задачи {}!'
 CANNOT_EDIT_COMMENT = 'У пользователя id={} нет прав на редактирование комментария {}!'
 COMMENT_NOT_FOUND = 'Комментарий id={} не найден в задаче id={}!'
+NOT_TASK_AUTHOR = 'Пользователь id={} не ставил задачу id={}!'
+TASK_NOT_DONE = 'Нельзя оценить задачу id={}, пока она не завершена!'
 
 
 async def get_or_404(crud: CRUDBase, obj_id: int, session: AsyncSession):
@@ -158,3 +160,12 @@ async def check_comment_in_task_and_company(
     if not comment:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=COMMENT_NOT_FOUND.format(comment_id, task_id))
     return comment
+
+
+async def check_can_evaluate_task(user: User, company_id: int, task_id: int, session: AsyncSession) -> Task:
+    task = await get_in_company_or_404(task_crud, task_id, company_id, session)
+    if not user.is_superuser and task.author_id != user.id:
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=NOT_TASK_AUTHOR.format(user.id, task.id))
+    if task.status != TaskStatus.DONE:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=TASK_NOT_DONE.format(task.id))
+    return task
