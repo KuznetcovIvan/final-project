@@ -18,7 +18,7 @@ from app.crud.task import task_comment_crud, task_crud
 from app.models.user import User
 from app.schemas.task import TaskCommentCreate, TaskCommentRead, TaskCommentUpdate, TaskCreate, TaskRead, TaskUpdate
 
-router = APIRouter(prefix='/companies')
+router = APIRouter()
 
 
 class TaskTags(StrEnum):

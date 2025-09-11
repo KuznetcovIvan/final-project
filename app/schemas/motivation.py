@@ -2,11 +2,13 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+rating_field = Field(..., ge=1, le=5)
+
 
 class RatingBase(BaseModel):
-    timeliness: int = Field(..., ge=1, le=5)
-    completeness: int = Field(..., ge=1, le=5)
-    quality: int = Field(..., ge=1, le=5)
+    timeliness: int = rating_field
+    completeness: int = rating_field
+    quality: int = rating_field
 
 
 class RatingCreate(RatingBase):

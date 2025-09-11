@@ -15,7 +15,7 @@ from app.schemas.motivation import RatingCreate, RatingRead, RatingsSummary
 EVALUATE_EXISTS = 'Задача с id={} уже оценена!'
 
 
-router = APIRouter(prefix='/companies')
+router = APIRouter()
 
 
 class MotivationTags(StrEnum):
