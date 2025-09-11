@@ -17,6 +17,9 @@ class Meeting(Base):
 
     __table_args__ = (CheckConstraint('end_at > start_at', name='meeting_time_valid'),)
 
+    def __repr__(self) -> str:
+        return f'Встреча "{self.title[:30]}..." начало: {self.start_at} окончание: {self.end_at}.'
+
 
 class MeetingAttendee(Base):
     meeting_id: Mapped[int] = mapped_column(ForeignKey('meeting.id', ondelete='CASCADE'))

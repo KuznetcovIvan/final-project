@@ -240,7 +240,7 @@ async def send_invite(
     session: AsyncSession = Depends(get_async_session),
 ):
     await check_before_invite(obj_in, company_id, session)
-    code = generate_invite_code(session)
+    code = await generate_invite_code(session)
     invite = await invites_crud.create(obj_in, company_id, code, session)
     background.add_task(send_invite_email, obj_in.email, code)
     return invite

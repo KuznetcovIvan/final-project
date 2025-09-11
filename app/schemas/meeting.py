@@ -3,10 +3,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core.constants import MEETING_DESC_MAX_LENGTH, MEETING_TITLE_MAX_LENGTH
+from app.schemas.user import UserShortRead
 
 INVALID_DATES = 'Дата окончания не может быть раньше даты начала!'
 FIELD_CANT_BE_EMPTY = 'Поле не может быть пустым!'
-BOTH_OR_NONE_DATES = 'Необходимо указать обе даты, либо не указывать ни одной!'
 
 
 class MeetingBase(BaseModel):
@@ -27,22 +27,12 @@ class MeetingCreate(MeetingBase):
 class MeetingUpdate(BaseModel):
     title: str | None = Field(None, max_length=MEETING_TITLE_MAX_LENGTH)
     description: str | None = Field(None, max_length=MEETING_DESC_MAX_LENGTH)
-    start_at: datetime | None = None
-    end_at: datetime | None = None
 
-    @field_validator('title', 'description', 'start_at', 'end_at')
+    @field_validator('title', 'description')
     def check_not_none(cls, value):
         if value is None:
             raise ValueError(FIELD_CANT_BE_EMPTY)
         return value
-
-    @model_validator(mode='after')
-    def check_dates(cls, values):
-        if (values.start_at is None) != (values.end_at is None):
-            raise ValueError(BOTH_OR_NONE_DATES)
-        if values.start_at and values.end_at and values.end_at < values.start_at:
-            raise ValueError(INVALID_DATES)
-        return values
 
 
 class MeetingRead(MeetingBase):
@@ -51,3 +41,7 @@ class MeetingRead(MeetingBase):
     author_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class MeetingAttendeeRead(MeetingRead):
+    invited: list[UserShortRead]

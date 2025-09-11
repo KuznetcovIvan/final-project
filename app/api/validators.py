@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.base import CRUDBase
 from app.crud.company import company_crud, department_crud, invites_crud, membership_crud
+from app.crud.meeting import meeting_crud
 from app.crud.task import task_comment_crud, task_crud
 from app.models.company import Invite, UserCompanyMembership, UserRole
 from app.models.task import Task, TaskComment, TaskStatus
@@ -29,6 +30,7 @@ CANNOT_EDIT_OBJ = 'У пользователя id={} нет прав на ред
 COMMENT_NOT_FOUND = 'Комментарий id={} не найден в задаче id={}!'
 NOT_TASK_AUTHOR = 'Пользователь id={} не ставил задачу id={}!'
 TASK_NOT_DONE = 'Нельзя оценить задачу id={}, пока она не завершена!'
+USER_IS_BUSY = 'Пользователь занят: {}'
 
 
 async def get_or_404(crud: CRUDBase, obj_id: int, session: AsyncSession):
@@ -171,3 +173,9 @@ async def check_can_evaluate_task(user: User, company_id: int, task_id: int, ses
     if task.status != TaskStatus.DONE:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=TASK_NOT_DONE.format(task.id))
     return task
+
+
+async def check_user_is_not_busy(user_id: int, start: datetime, end: datetime, session: AsyncSession) -> None:
+    meetings = await meeting_crud.get_user_meetings_at_the_same_time(user_id, start, end, session)
+    if meetings:
+        raise HTTPException(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, detail=USER_IS_BUSY.format(str(meetings)))
