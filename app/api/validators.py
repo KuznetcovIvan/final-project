@@ -25,7 +25,7 @@ ONLY_SUBORDINATES = 'Можно назначать задачи только п�
 EXECUTOR_ONLY_STATUS = 'Исполнитель может менять только статус!'
 CANNOT_EDIT_TASK = 'У пользователя id={} нет прав на редактирование задачи {}!'
 CANNOT_DELETE_TASK = 'У пользователя id={} нет прав на удаление задачи {}!'
-CANNOT_EDIT_COMMENT = 'У пользователя id={} нет прав на редактирование комментария {}!'
+CANNOT_EDIT_OBJ = 'У пользователя id={} нет прав на редактирование {} id={}!'
 COMMENT_NOT_FOUND = 'Комментарий id={} не найден в задаче id={}!'
 NOT_TASK_AUTHOR = 'Пользователь id={} не ставил задачу id={}!'
 TASK_NOT_DONE = 'Нельзя оценить задачу id={}, пока она не завершена!'
@@ -114,7 +114,7 @@ async def check_before_leave(user_id: int, company_id: int, session: AsyncSessio
     return membership
 
 
-async def has_full_access(user: User, company_id: int, obj: Task | TaskComment, session: AsyncSession) -> bool:
+async def has_full_access(user: User, company_id: int, obj, session: AsyncSession) -> bool:
     if user.is_superuser or user.id == obj.author_id:
         return True
     membership = await membership_crud.get_by_user_and_company(user.id, company_id, session)
@@ -147,9 +147,11 @@ async def check_can_delete_task(user: User, company_id: int, task: Task, session
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=CANNOT_DELETE_TASK.format(user.id, task.id))
 
 
-async def check_can_manage_comment(user: User, company_id: int, comment: TaskComment, session: AsyncSession):
-    if not await has_full_access(user, company_id, comment, session):
-        raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=CANNOT_EDIT_COMMENT.format(user.id, comment.id))
+async def check_can_manage_obj(user: User, company_id: int, obj, session: AsyncSession):
+    if not await has_full_access(user, company_id, obj, session):
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail=CANNOT_EDIT_OBJ.format(user.id, type(obj).__name__, obj.id)
+        )
 
 
 async def check_comment_in_task_and_company(

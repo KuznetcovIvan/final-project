@@ -11,7 +11,7 @@ class Meeting(Base):
     title: Mapped[str] = mapped_column(String(MEETING_TITLE_MAX_LENGTH))
     description: Mapped[str] = mapped_column(String(MEETING_DESC_MAX_LENGTH))
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id', ondelete='CASCADE'))
-    organizer_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
+    author_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
     start_at: Mapped[datetime] = mapped_column(DateTime)
     end_at: Mapped[datetime] = mapped_column(DateTime)
 

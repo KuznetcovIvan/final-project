@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import user_manager_admin_or_superuser, user_member_or_superuser
 from app.api.validators import (
     check_can_delete_task,
-    check_can_manage_comment,
+    check_can_manage_obj,
     check_can_update_task,
     check_comment_in_task_and_company,
     check_manager_can_create_task,
@@ -109,7 +109,7 @@ async def update_task_comment(
     user: User = Depends(user_member_or_superuser),
 ):
     comment = await check_comment_in_task_and_company(company_id, task_id, comment_id, session)
-    await check_can_manage_comment(user, company_id, comment, session)
+    await check_can_manage_obj(user, company_id, comment, session)
     return await task_comment_crud.update(comment, obj_in, session)
 
 
@@ -124,5 +124,5 @@ async def delete_task_comment(
     user: User = Depends(user_member_or_superuser),
 ):
     comment = await check_comment_in_task_and_company(company_id, task_id, comment_id, session)
-    await check_can_manage_comment(user, company_id, comment, session)
+    await check_can_manage_obj(user, company_id, comment, session)
     return await task_comment_crud.remove(comment, session)
