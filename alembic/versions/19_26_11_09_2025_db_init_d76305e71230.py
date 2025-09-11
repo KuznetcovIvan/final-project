@@ -1,8 +1,8 @@
-"""init
+"""db_init
 
-Revision ID: 5e9749f7e733
+Revision ID: d76305e71230
 Revises:
-Create Date: 2025-09-04 18:01:17.143807
+Create Date: 2025-09-11 19:26:19.156771
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '5e9749f7e733'
+revision: str = 'd76305e71230'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -51,7 +51,6 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['author_id'], ['user.id'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['company_id'], ['company.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('title', 'published_at', name='unique_title_published'),
     )
     op.create_table(
         'department',
@@ -65,18 +64,89 @@ def upgrade() -> None:
         sa.UniqueConstraint('name', 'company_id', name='unique_department_company'),
     )
     op.create_table(
+        'meeting',
+        sa.Column('title', sa.String(length=255), nullable=False),
+        sa.Column('description', sa.String(length=4000), nullable=False),
+        sa.Column('company_id', sa.Integer(), nullable=False),
+        sa.Column('author_id', sa.Integer(), nullable=False),
+        sa.Column('start_at', sa.DateTime(), nullable=False),
+        sa.Column('end_at', sa.DateTime(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.CheckConstraint('end_at > start_at', name='meeting_time_valid'),
+        sa.ForeignKeyConstraint(['author_id'], ['user.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['company_id'], ['company.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'task',
+        sa.Column('title', sa.String(length=255), nullable=False),
+        sa.Column('body', sa.Text(), nullable=False),
+        sa.Column('status', sa.Enum('TODO', 'IN_PROGRESS', 'DONE', name='taskstatus'), nullable=False),
+        sa.Column('company_id', sa.Integer(), nullable=False),
+        sa.Column('author_id', sa.Integer(), nullable=False),
+        sa.Column('executor_id', sa.Integer(), nullable=False),
+        sa.Column('start_at', sa.DateTime(), nullable=False),
+        sa.Column('due_at', sa.DateTime(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(['author_id'], ['user.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['company_id'], ['company.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['executor_id'], ['user.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
         'invite',
         sa.Column('code', sa.String(length=6), nullable=False),
         sa.Column('company_id', sa.Integer(), nullable=False),
         sa.Column('department_id', sa.Integer(), nullable=True),
         sa.Column('role', sa.Enum('USER', 'MANAGER', 'ADMIN', name='userrole'), nullable=False),
-        sa.Column('created_by', sa.Integer(), nullable=False),
+        sa.Column('email', sa.String(length=320), nullable=False),
+        sa.Column('manager_id', sa.Integer(), nullable=True),
+        sa.Column('expires_at', sa.DateTime(), nullable=False),
         sa.Column('id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(['company_id'], ['company.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['created_by'], ['user.id'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['department_id'], ['department.id'], ondelete='SET NULL'),
+        sa.ForeignKeyConstraint(['manager_id'], ['user.id'], ondelete='SET NULL'),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('code'),
+    )
+    op.create_index(op.f('ix_invite_expires_at'), 'invite', ['expires_at'], unique=False)
+    op.create_table(
+        'meetingattendee',
+        sa.Column('meeting_id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(['meeting_id'], ['meeting.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('meeting_id', 'user_id', name='unique_meeting_user'),
+    )
+    op.create_table(
+        'rating',
+        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('timeliness', sa.SmallInteger(), nullable=False),
+        sa.Column('completeness', sa.SmallInteger(), nullable=False),
+        sa.Column('quality', sa.SmallInteger(), nullable=False),
+        sa.Column(
+            'avg',
+            sa.Float(),
+            sa.Computed('(timeliness + completeness + quality) / 3.0', persisted=True),
+            nullable=False,
+        ),
+        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(['task_id'], ['task.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('task_id'),
+    )
+    op.create_table(
+        'taskcomment',
+        sa.Column('body', sa.Text(), nullable=False),
+        sa.Column('author_id', sa.Integer(), nullable=False),
+        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(['author_id'], ['user.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['task_id'], ['task.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id'),
     )
     op.create_table(
         'usercompanymembership',
@@ -100,7 +170,13 @@ def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('usercompanymembership')
+    op.drop_table('taskcomment')
+    op.drop_table('rating')
+    op.drop_table('meetingattendee')
+    op.drop_index(op.f('ix_invite_expires_at'), table_name='invite')
     op.drop_table('invite')
+    op.drop_table('task')
+    op.drop_table('meeting')
     op.drop_table('department')
     op.drop_table('companynews')
     op.drop_index(op.f('ix_user_email'), table_name='user')

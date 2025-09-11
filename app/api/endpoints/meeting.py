@@ -1,4 +1,3 @@
-from enum import StrEnum
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,17 +19,13 @@ from app.models.user import User
 from app.schemas.meeting import MeetingAttendeeRead, MeetingCreate, MeetingRead, MeetingUpdate
 from app.schemas.user import UserShortRead
 
-router = APIRouter()
-
-
-class MeetingTags(StrEnum):
-    MEETINGS = 'Встречи'
+router = APIRouter(tags=['Встречи'])
 
 
 USER_IN_MEETINGS_EXISTS = 'Пользователь с id={} уже участвует в встрече id={}'
 
 
-@router.post('/{company_id}/meetings', response_model=MeetingRead, tags=[MeetingTags.MEETINGS])
+@router.post('/{company_id}/meetings', response_model=MeetingRead)
 async def create_meeting(
     company_id: int,
     obj_in: MeetingCreate,
@@ -41,16 +36,13 @@ async def create_meeting(
 
 
 @router.get(
-    '/{company_id}/meetings',
-    response_model=list[MeetingRead],
-    dependencies=[Depends(user_member_or_superuser)],
-    tags=[MeetingTags.MEETINGS],
+    '/{company_id}/meetings', response_model=list[MeetingRead], dependencies=[Depends(user_member_or_superuser)]
 )
 async def get_all_meetings(company_id: int, session: AsyncSession = Depends(get_async_session)):
     return await meeting_crud.get_multi_by_company(company_id, session)
 
 
-@router.patch('/{company_id}/meetings/{meeting_id}', response_model=MeetingRead, tags=[MeetingTags.MEETINGS])
+@router.patch('/{company_id}/meetings/{meeting_id}', response_model=MeetingRead)
 async def update_meeting(
     company_id: int,
     meeting_id: int,
@@ -63,7 +55,7 @@ async def update_meeting(
     return await meeting_crud.update(meeting, obj_in, session)
 
 
-@router.delete('/{company_id}/meetings/{meeting_id}', response_model=MeetingRead, tags=[MeetingTags.MEETINGS])
+@router.delete('/{company_id}/meetings/{meeting_id}', response_model=MeetingRead)
 async def delete_meeting(
     company_id: int,
     meeting_id: int,
@@ -75,11 +67,7 @@ async def delete_meeting(
     return await meeting_crud.remove(meeting, session)
 
 
-@router.post(
-    '/{company_id}/meetings/{meeting_id}/invite/{invited_id}',
-    response_model=MeetingAttendeeRead,
-    tags=[MeetingTags.MEETINGS],
-)
+@router.post('/{company_id}/meetings/{meeting_id}/invite/{invited_id}', response_model=MeetingAttendeeRead)
 async def invite_meeting(
     company_id: int,
     meeting_id: int,

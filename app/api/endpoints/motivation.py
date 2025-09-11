@@ -1,4 +1,3 @@
-from enum import StrEnum
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -15,14 +14,10 @@ from app.schemas.motivation import RatingCreate, RatingRead, RatingsSummary
 EVALUATE_EXISTS = 'Задача с id={} уже оценена!'
 
 
-router = APIRouter()
+router = APIRouter(tags=['Мотивация'])
 
 
-class MotivationTags(StrEnum):
-    MOTIVATION = 'Мотивация'
-
-
-@router.post('/{company_id}/tasks/{task_id}/evaluate', response_model=RatingRead, tags=[MotivationTags.MOTIVATION])
+@router.post('/{company_id}/tasks/{task_id}/evaluate', response_model=RatingRead)
 async def evaluate_task(
     company_id: int,
     task_id: int,
@@ -39,7 +34,7 @@ async def evaluate_task(
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=EVALUATE_EXISTS.format(task_id))
 
 
-@router.get('/{company_id}/ratings', response_model=RatingsSummary, tags=[MotivationTags.MOTIVATION])
+@router.get('/{company_id}/ratings', response_model=RatingsSummary)
 async def get_user_and_department_ratings(
     company_id: int,
     year: int = Query(ge=1000, le=9999),

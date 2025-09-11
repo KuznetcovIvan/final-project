@@ -30,12 +30,7 @@ class CRUDMeeting(CRUDBase):
         query = (
             select(self.model)
             .join(MeetingAttendee, MeetingAttendee.meeting_id == self.model.id)
-            .where(
-                self.model.start_at < end,
-                self.model.end_at > start,
-                MeetingAttendee.user_id == user_id,
-                self.model.author_id != user_id,
-            )
+            .where(self.model.start_at < end, self.model.end_at > start, MeetingAttendee.user_id == user_id)
         )
         if company_id is not None:
             query = query.where(self.model.company_id == company_id)
