@@ -1,11 +1,13 @@
 from app.admin.views.base import BaseModelView
 from app.models.meeting import Meeting, MeetingAttendee
+from app.schemas.meeting import MeetingAttendeeAdminCreate, MeetingCreate
 
 
 class MeetingView(BaseModelView):
     def __init__(self):
         super().__init__(
             Meeting,
+            MeetingCreate,
             icon='fa fa-calendar',
             name='встречу',
             label='Встречи',
@@ -21,6 +23,7 @@ class MeetingAttendeeView(BaseModelView):
     def __init__(self):
         super().__init__(
             MeetingAttendee,
+            MeetingAttendeeAdminCreate,
             icon='fa fa-user-check',
             name='участника встречи',
             label='Участники встреч',

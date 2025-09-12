@@ -43,5 +43,10 @@ class MeetingRead(MeetingBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MeetingAttendeeAdminCreate(BaseModel):
+    meeting_id: int
+    user_id: int
+
+
 class MeetingAttendeeRead(MeetingRead):
     invited: list[UserShortRead]

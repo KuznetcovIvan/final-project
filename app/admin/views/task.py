@@ -1,11 +1,13 @@
 from app.admin.views.base import BaseModelView
 from app.models.task import Task, TaskComment
+from app.schemas.task import TaskCommentCreate, TaskCreate
 
 
 class TaskView(BaseModelView):
     def __init__(self):
         super().__init__(
             Task,
+            TaskCreate,
             icon='fa fa-tasks',
             name='задачу',
             label='Задачи',
@@ -21,6 +23,7 @@ class TaskCommentView(BaseModelView):
     def __init__(self):
         super().__init__(
             TaskComment,
+            TaskCommentCreate,
             icon='fa fa-comments',
             name='комментарий',
             label='Комментарии к задачам',
