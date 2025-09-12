@@ -2,12 +2,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.admin import init_admin
 from app.api.routers import main_router
-from app.core.admin import init_admin
 from app.core.config import settings
 from app.core.init_db import create_first_superuser
-from app.core.scheduler import start_scheduler, stop_scheduler
-from app.tasks.setup import register_jobs
+from app.core.scheduler import register_jobs, start_scheduler, stop_scheduler
 
 
 @asynccontextmanager

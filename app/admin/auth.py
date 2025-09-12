@@ -1,19 +1,11 @@
-from fastapi import FastAPI
 from fastapi_users.password import PasswordHelper
 from sqlalchemy import select
-from starlette.middleware import Middleware
-from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette_admin.auth import AdminConfig, AdminUser, AuthProvider, FormValidationError, LoginFailed
-from starlette_admin.contrib.sqla import Admin, ModelView
 
 from app.core.config import settings
-from app.core.db import AsyncSessionLocal, engine
-from app.models.company import Company, CompanyNews, Department, Invite, UserCompanyMembership
-from app.models.meeting import Meeting, MeetingAttendee
-from app.models.motivation import Rating
-from app.models.task import Task, TaskComment
+from app.core.db import AsyncSessionLocal
 from app.models.user import User
 
 ADMIN_TITLE = f'{settings.app_title} Admin'
@@ -55,27 +47,3 @@ class SuperuserAuth(AuthProvider):
 
     def get_admin_config(self, request: Request) -> AdminConfig:
         return AdminConfig(app_title=ADMIN_TITLE)
-
-
-def init_admin(app: FastAPI) -> Admin:
-    admin = Admin(
-        engine,
-        title=ADMIN_TITLE,
-        auth_provider=SuperuserAuth(),
-        middlewares=[Middleware(SessionMiddleware, secret_key=settings.secret)],
-    )
-
-    admin.add_view(ModelView(User))
-    admin.add_view(ModelView(Company))
-    admin.add_view(ModelView(Department))
-    admin.add_view(ModelView(UserCompanyMembership))
-    admin.add_view(ModelView(Invite))
-    admin.add_view(ModelView(CompanyNews))
-    admin.add_view(ModelView(Meeting))
-    admin.add_view(ModelView(MeetingAttendee))
-    admin.add_view(ModelView(Task))
-    admin.add_view(ModelView(TaskComment))
-    admin.add_view(ModelView(Rating))
-
-    admin.mount_to(app, '/admin')
-    return admin
