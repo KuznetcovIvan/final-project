@@ -1,4 +1,5 @@
 from fastapi_mail import ConnectionConfig
+from pydantic import EmailStr
 from pydantic_settings import BaseSettings
 
 
@@ -15,12 +16,15 @@ class Settings(BaseSettings):
 
     secret: str
 
-    mail_username: str
+    mail_username: EmailStr
     mail_password: str
-    mail_from: str
+    mail_from: EmailStr
     mail_port: int
     mail_server: str
     mail_from_name: str
+
+    first_superuser_email: EmailStr | None = None
+    first_superuser_password: str | None = None
 
     @property
     def database_url(self) -> str:
