@@ -38,7 +38,7 @@ class CalendarService:
             .where(
                 Task.company_id == self.company_id,
                 Task.start_at < self.window_end,
-                Task.due_at > self.window_start,
+                Task.end_at > self.window_start,
                 Task.executor_id == self.user_id,
             )
             .order_by(Task.start_at)

@@ -36,6 +36,9 @@ class Company(Base):
     meetings: Mapped[list['Meeting']] = relationship(back_populates='company')
     tasks: Mapped[list['Task']] = relationship(back_populates='company')
 
+    def __admin_repr__(self, request):
+        return f'{self.name}'
+
 
 class Department(Base):
     name: Mapped[str] = mapped_column(String(DEPARTMENT_NAME_MAX_LENGTH))
@@ -49,6 +52,9 @@ class Department(Base):
     invites: Mapped[list['Invite']] = relationship(back_populates='department')
     parent: Mapped['Department | None'] = relationship(back_populates='children', remote_side='Department.id')
     children: Mapped[list['Department']] = relationship(back_populates='parent')
+
+    def __admin_repr__(self, request):
+        return self.name
 
 
 class UserCompanyMembership(Base):
@@ -65,6 +71,9 @@ class UserCompanyMembership(Base):
     department: Mapped['Department | None'] = relationship(back_populates='memberships', foreign_keys=[department_id])
     manager: Mapped['User | None'] = relationship(back_populates='managed_memberships', foreign_keys=[manager_id])
 
+    def __admin_repr__(self, request):
+        return f'Пользователь с id={self.user_id} является {self.role} в компании с id={self.company_id}'
+
 
 class CompanyNews(Base):
     title: Mapped[str] = mapped_column(String(NEWS_TITLE_MAX_LENGTH))
@@ -75,6 +84,9 @@ class CompanyNews(Base):
 
     author: Mapped['User'] = relationship(back_populates='news_posts')
     company: Mapped['Company'] = relationship(back_populates='news')
+
+    def __admin_repr__(self, request):
+        return f'{self.title[:30]}... ({self.published_at})'
 
 
 class Invite(Base):
@@ -89,3 +101,6 @@ class Invite(Base):
     company: Mapped['Company'] = relationship(back_populates='invites')
     department: Mapped['Department | None'] = relationship(back_populates='invites')
     manager: Mapped['User | None'] = relationship(back_populates='sent_invites')
+
+    def __admin_repr__(self, request):
+        return f'{self.email} ({self.role})'

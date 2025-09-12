@@ -13,7 +13,7 @@ class TaskBase(BaseModel):
     title: str
     body: str
     start_at: datetime
-    due_at: datetime
+    end_at: datetime
 
 
 class TaskCreate(TaskBase):
@@ -22,7 +22,7 @@ class TaskCreate(TaskBase):
 
     @model_validator(mode='after')
     def check_dates(cls, values):
-        if values.start_at and values.due_at and values.due_at < values.start_at:
+        if values.start_at and values.end_at and values.end_at < values.start_at:
             raise ValueError(INVALID_DATES)
         return values
 
@@ -42,9 +42,9 @@ class TaskUpdate(BaseModel):
     body: str | None = None
     status: TaskStatus | None = None
     start_at: datetime | None = None
-    due_at: datetime | None = None
+    end_at: datetime | None = None
 
-    @field_validator('title', 'body', 'status', 'start_at', 'due_at')
+    @field_validator('title', 'body', 'status', 'start_at', 'end_at')
     def check_not_none(cls, value):
         if value is None:
             raise ValueError(FIELD_CANT_BE_EMPTY)
@@ -52,9 +52,9 @@ class TaskUpdate(BaseModel):
 
     @model_validator(mode='after')
     def check_dates(cls, values):
-        if (values.start_at is None) != (values.due_at is None):
+        if (values.start_at is None) != (values.end_at is None):
             raise ValueError(BOTH_OR_NONE_DATES)
-        if values.start_at and values.due_at and values.due_at < values.start_at:
+        if values.start_at and values.end_at and values.end_at < values.start_at:
             raise ValueError(INVALID_DATES)
         return values
 

@@ -29,6 +29,9 @@ class Meeting(Base):
     def __repr__(self) -> str:
         return f'Встреча "{self.title[:30]}..." начало: {self.start_at} окончание: {self.end_at}.'
 
+    def __admin_repr__(self, request):
+        return f'{self.title[:30]} ({self.start_at} - {self.end_at})'
+
 
 class MeetingAttendee(Base):
     meeting_id: Mapped[int] = mapped_column(ForeignKey('meeting.id', ondelete='CASCADE'))
@@ -38,3 +41,6 @@ class MeetingAttendee(Base):
 
     meeting: Mapped['Meeting'] = relationship(back_populates='attendees')
     user: Mapped['User'] = relationship(back_populates='meetings_attendances')
+
+    def __admin_repr__(self, request):
+        return f'meeting_id={self.meeting_id}, user_id={self.user_id}'

@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
@@ -27,13 +27,18 @@ class Task(Base):
     author_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
     executor_id: Mapped[int] = mapped_column(ForeignKey('user.id', ondelete='CASCADE'))
     start_at: Mapped[datetime] = mapped_column(DateTime)
-    due_at: Mapped[datetime] = mapped_column(DateTime)
+    end_at: Mapped[datetime] = mapped_column(DateTime)
+
+    __table_args__ = (CheckConstraint('end_at > start_at', name='task_time_valid'),)
 
     company: Mapped['Company'] = relationship(back_populates='tasks')
     author: Mapped['User'] = relationship(back_populates='tasks_authored', foreign_keys=[author_id])
     executor: Mapped['User'] = relationship(back_populates='tasks_executed', foreign_keys=[executor_id])
     comments: Mapped[list['TaskComment']] = relationship(back_populates='task')
     rating: Mapped['Rating | None'] = relationship(back_populates='task')
+
+    def __admin_repr__(self, request):
+        return f'{self.title[:30]}... [{self.status}] ({self.end_at})'
 
 
 class TaskComment(Base):
@@ -43,3 +48,6 @@ class TaskComment(Base):
 
     author: Mapped['User'] = relationship(back_populates='task_comments')
     task: Mapped['Task'] = relationship(back_populates='comments')
+
+    def __admin_repr__(self, request):
+        return f'{self.body[:30]}...'

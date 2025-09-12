@@ -25,3 +25,8 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     tasks_executed: Mapped[list['Task']] = relationship(back_populates='executor', foreign_keys='Task.executor_id')
     task_comments: Mapped[list['TaskComment']] = relationship(back_populates='author')
     sent_invites: Mapped[list['Invite']] = relationship(back_populates='manager')
+
+    def __admin_repr__(self, request):
+        if self.is_superuser:
+            return f'{self.email} (super)'
+        return self.email

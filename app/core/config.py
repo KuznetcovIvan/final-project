@@ -1,4 +1,3 @@
-from fastapi_mail import ConnectionConfig
 from pydantic import EmailStr
 from pydantic_settings import BaseSettings
 
@@ -34,8 +33,8 @@ class Settings(BaseSettings):
         )
 
     @property
-    def mail_config(self) -> ConnectionConfig:
-        return ConnectionConfig(
+    def mail_config(self) -> dict:
+        return dict(
             MAIL_USERNAME=self.mail_username,
             MAIL_PASSWORD=self.mail_password,
             MAIL_FROM=self.mail_from,

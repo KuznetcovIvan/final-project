@@ -1,15 +1,32 @@
-from starlette_admin.contrib.sqla import ModelView
-
+from app.admin.views.base import BaseModelView
 from app.models.meeting import Meeting, MeetingAttendee
 
 
-class MeetingView(ModelView):
+class MeetingView(BaseModelView):
     def __init__(self):
-        super().__init__(Meeting)
-        self.name = 'Встречи'
+        super().__init__(
+            Meeting,
+            icon='fa fa-calendar',
+            name='встречу',
+            label='Встречи',
+        )
+
+    fields = ['id', 'title', 'description', 'company', 'author', 'start_at', 'end_at']
+    sortable_fields = ['id', 'start_at', 'end_at', 'title']
+    searchable_fields = ['title', 'description']
+    fields_default_sort = ['start_at']
 
 
-class MeetingAttendeeView(ModelView):
+class MeetingAttendeeView(BaseModelView):
     def __init__(self):
-        super().__init__(MeetingAttendee)
-        self.name = 'Участники встреч'
+        super().__init__(
+            MeetingAttendee,
+            icon='fa fa-user-check',
+            name='участника встречи',
+            label='Участники встреч',
+        )
+
+    fields = ['id', 'meeting', 'user']
+    sortable_fields = ['id', 'meeting', 'user']
+    searchable_fields = ['id']
+    fields_default_sort = searchable_fields

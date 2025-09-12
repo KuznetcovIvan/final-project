@@ -1,11 +1,17 @@
-from starlette_admin.contrib.sqla import ModelView
-
+from app.admin.views.base import BaseModelView
 from app.models.user import User
 
 
-class UserView(ModelView):
+class UserView(BaseModelView):
     def __init__(self):
-        super().__init__(User)
-        self.name = 'Пользователи'
-        self.search_fields = ['email']
-        self.sortable_fields = ['id', 'email']
+        super().__init__(
+            User,
+            icon='fa fa-users',
+            name='пользователя',
+            label='Пользователи',
+        )
+
+    fields = ['id', 'email', 'hashed_password', 'is_superuser']
+    sortable_fields = ['id', 'email']
+    searchable_fields = ['email']
+    fields_default_sort = searchable_fields
