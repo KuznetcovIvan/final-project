@@ -12,9 +12,11 @@ dependencies = [
     "fastapi-mail>=1.5.0",
     "fastapi-users>=14.0.1",
     "fastapi-users-db-sqlalchemy>=7.0.0",
+    "itsdangerous>=2.2.0",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "sqlalchemy>=2.0.43",
+    "starlette-admin>=0.15.1",
     "uvicorn>=0.35.0",
 ]
 
