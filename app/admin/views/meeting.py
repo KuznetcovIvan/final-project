@@ -1,11 +1,15 @@
+from starlette_admin.exceptions import FormValidationError
+
 from app.admin.views.base import BaseModelView
 from app.models.meeting import Meeting, MeetingAttendee
+from app.schemas.meeting import MeetingAttendeeAdminCreate, MeetingCreate
 
 
 class MeetingView(BaseModelView):
     def __init__(self):
         super().__init__(
             Meeting,
+            MeetingCreate,
             icon='fa fa-calendar',
             name='встречу',
             label='Встречи',
@@ -16,11 +20,16 @@ class MeetingView(BaseModelView):
     searchable_fields = ['title', 'description']
     fields_default_sort = ['start_at']
 
+    async def validate(self, request, data):
+        if data.get('end_at') <= data.get('start_at'):
+            raise FormValidationError({'end_at': 'Дата окончания должна быть позже даты начала!'})
+
 
 class MeetingAttendeeView(BaseModelView):
     def __init__(self):
         super().__init__(
             MeetingAttendee,
+            MeetingAttendeeAdminCreate,
             icon='fa fa-user-check',
             name='участника встречи',
             label='Участники встреч',

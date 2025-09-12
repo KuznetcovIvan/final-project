@@ -1,5 +1,5 @@
 from starlette_admin import ExportType
-from starlette_admin.contrib.sqla import ModelView
+from starlette_admin.contrib.sqla.ext.pydantic import ModelView
 
 
 class BaseModelView(ModelView):
