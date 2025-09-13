@@ -25,7 +25,9 @@ dev = [
     "pre-commit>=4.3.0",
     "ruff>=0.12.11",
 ]
-
+prod = [
+    "gunicorn>=21.0.0",
+]
 [tool.ruff]
 line-length = 120
 target-version = "py311"
