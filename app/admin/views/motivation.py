@@ -34,8 +34,21 @@ class RatingView(BaseModelView):
             db_task = await session.get(Task, task.id)
             if not db_task or db_task.status != TaskStatus.DONE:
                 errors['task'] = 'Оценку можно выставить только завершённой задаче'
-            if await session.scalar(select(Rating.id).where(Rating.task_id == task.id)):
-                errors['task'] = 'Эта задача уже была оценена'
+            else:
+                rating_id = request.path_params.get('pk')
+                q = select(Rating.id).where(Rating.task_id == task.id)
+                if rating_id:
+                    q = q.where(Rating.id != int(rating_id))
+                if await session.scalar(q):
+                    errors['task'] = 'Эта задача уже была оценена'
+        if data.get('created_at') is None:
+            errors['created_at'] = 'Укажите дату!'
+        for field in ('timeliness', 'completeness', 'quality'):
+            value = data.get(field)
+            if value is None:
+                errors[field] = 'Поле обязательно'
+            elif not (1 <= value <= 5):
+                errors[field] = 'Значение должно быть от 1 до 5'
         if errors:
             raise FormValidationError(errors)
         return data

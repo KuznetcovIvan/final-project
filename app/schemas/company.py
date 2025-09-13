@@ -87,6 +87,11 @@ class CompanyMembershipUpdate(BaseModel):
         return value
 
 
+class CompanyMembershipAdminCreate(CompanyMembershipCreate):
+    user_id: int | None = None
+    company_id: int | None = None
+
+
 class CompanyNewsBase(BaseModel):
     title: str = Field(..., max_length=NEWS_TITLE_MAX_LENGTH)
     body: str = Field(..., max_length=NEWS_BODY_MAX_LENGTH)
@@ -131,6 +136,12 @@ class CompanyNewsUpdate(CompanyNewsBase):
         if value.date() < datetime.now().date():
             raise ValueError(DATE_CANT_BE_IN_PAST)
         return value
+
+
+class CompanyNewsAdminCreate(CompanyNewsCreate):
+    author_id: int | None = None
+    company_id: int | None = None
+    model_config = ConfigDict(extra='allow')
 
 
 class InviteBase(BaseModel):

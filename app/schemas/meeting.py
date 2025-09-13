@@ -43,9 +43,15 @@ class MeetingRead(MeetingBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MeetingAdminCreate(MeetingCreate):
+    author_id: int | None = None
+    company_id: int | None = None
+    model_config = ConfigDict(extra='allow')
+
+
 class MeetingAttendeeAdminCreate(BaseModel):
-    meeting_id: int
-    user_id: int
+    meeting_id: int | None = None
+    user_id: int | None = None
 
 
 class MeetingAttendeeRead(MeetingRead):

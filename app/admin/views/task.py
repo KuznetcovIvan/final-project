@@ -1,3 +1,5 @@
+from starlette_admin.exceptions import FormValidationError
+
 from app.admin.views.base import BaseModelView
 from app.models.task import Task, TaskComment
 from app.schemas.task import TaskCommentCreate, TaskCreate
@@ -17,6 +19,10 @@ class TaskView(BaseModelView):
     sortable_fields = ['id', 'status', 'start_at', 'end_at', 'title']
     searchable_fields = ['title', 'body']
     fields_default_sort = ['end_at']
+
+    async def validate(self, request, data):
+        if data.get('end_at') <= data.get('start_at'):
+            raise FormValidationError({'end_at': 'Дата окончания должна быть позже даты начала!'})
 
 
 class TaskCommentView(BaseModelView):

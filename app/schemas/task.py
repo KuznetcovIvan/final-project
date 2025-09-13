@@ -22,7 +22,7 @@ class TaskCreate(TaskBase):
 
     @model_validator(mode='after')
     def check_dates(cls, values):
-        if values.start_at and values.end_at and values.end_at < values.start_at:
+        if values.end_at < values.start_at:
             raise ValueError(INVALID_DATES)
         return values
 
