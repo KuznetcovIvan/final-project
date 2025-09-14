@@ -18,7 +18,7 @@ services:
     build: ./nginx/
     env_file: .env
     ports:
-      - 9090:80
+      - 8000:80
     volumes:
       - ./docs/:/usr/share/nginx/html/api/docs/
     depends_on:
