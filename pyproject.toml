@@ -5,10 +5,18 @@ description = "final-project"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "alembic>=1.16.5",
+    "apscheduler>=3.11.0",
     "asyncpg>=0.30.0",
     "fastapi>=0.116.1",
+    "fastapi-mail>=1.5.0",
+    "fastapi-users>=14.0.1",
+    "fastapi-users-db-sqlalchemy>=7.0.0",
+    "itsdangerous>=2.2.0",
     "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
     "sqlalchemy>=2.0.43",
+    "starlette-admin[i18n]>=0.15.1",
     "uvicorn>=0.35.0",
 ]
 
@@ -17,7 +25,9 @@ dev = [
     "pre-commit>=4.3.0",
     "ruff>=0.12.11",
 ]
-
+prod = [
+    "gunicorn>=21.0.0",
+]
 [tool.ruff]
 line-length = 120
 target-version = "py311"
