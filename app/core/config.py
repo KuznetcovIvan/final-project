@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     mail_server: str
     mail_from_name: str
 
+    run_first_migration: bool = False
     first_superuser_email: EmailStr | None = None
     first_superuser_password: str | None = None
 
